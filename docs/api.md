@@ -62,7 +62,7 @@ CLI: `tiny-engineer watch` (`http:` base → WebSocket; `--transport serial` →
 
 ### `GET /`
 
-HTML endpoint index. Lists all routes plus supported parameters for `/anim`, `/settings`, `/test/servo`, `/setup/servo`, `/setup/led`, `/setup/audio`, `/setup/oled`, and `/servos/park`. Safe, no hardware side effects. Always public (no Bearer required).
+HTML endpoint index. Lists all routes plus supported parameters for `/anim`, `/settings`, `/test/servo`, `/servo/calibrate`, `/settings/servo`, `/setup/servo`, `/setup/led`, `/setup/audio`, `/setup/oled`, and `/servos/park`. Safe, no hardware side effects. Always public (no Bearer required).
 
 Open in a browser:
 
@@ -198,7 +198,7 @@ curl http://tiny-engineer.local/settings
 
 ### `POST /settings`
 
-Update one or more settings from a JSON object body. Values are written to NVS. `sleep_timeout`, `volume`, `welcome`, `serial_log`, `push_button`, `push_button_pin`, `continuous_timeout`, `eyes_style`, and `access_token` apply immediately; a changed `hostname` or `loading` takes effect on the **next reboot**. WiFi networks are set with [`PUT /settings/wifi`](#put-settingswifi). On-device Actions are set with [`PUT /settings/actions`](#put-settingsactions). Servo ranges (`servo_mins` + `servo_maxs`), RGB LED mapping (`rgb_order`) and OLED rotation (`oled_rotate_180`) are **setup AP only** and apply immediately. Requires Bearer when auth is enabled.
+Update one or more settings from a JSON object body. Values are written to NVS. `sleep_timeout`, `volume`, `welcome`, `serial_log`, `push_button`, `push_button_pin`, `continuous_timeout`, `eyes_style`, and `access_token` apply immediately; a changed `hostname` or `loading` takes effect on the **next reboot**. WiFi networks are set with [`PUT /settings/wifi`](#put-settingswifi). On-device Actions are set with [`PUT /settings/actions`](#put-settingsactions). Servo ranges (`servo_mins` + `servo_maxs`), RGB LED mapping (`rgb_order`) and OLED rotation (`oled_rotate_180`) are **setup AP only** and apply immediately; outside setup AP, save one joint's range with [`PUT /settings/servo`](#put-settingsservo). Requires Bearer when auth is enabled.
 
 ```bash
 curl -X POST "http://tiny-engineer.local/settings" \
@@ -449,7 +449,48 @@ Wrong fields return **400** and do not move any servo:
 | `invalid index` | `index` missing, not an integer, or outside `0`–`4` |
 | `invalid angle` | `angle` missing, not a number, or outside `0`–`180` |
 
-After STA is up, use `POST /test/servo` (clamped to saved min/max).
+After STA is up, use `POST /test/servo` (clamped to saved min/max), or [`POST /servo/calibrate`](#post-servocalibrate) to recalibrate one joint.
+
+### `POST /servo/calibrate`
+
+Recalibrate one joint without setup AP mode. Slowly move one servo using the full **0–180°** electrical range (no saved safe-range clamp), at ~25°/s (`SERVO_CALIB_SPEED_DEG_S`), like [`POST /setup/servo`](#post-setupservo). Handler blocks until the move finishes. Requires a provisioned robot and Bearer when auth is enabled.
+
+The first move opens a **calibration session**: the robot switches to the `none` pose, then refuses every animation (including `POST /anim`, Actions and the sleep timer) and keeps servo PWM on, so only calibration moves the joints. Each move refreshes the session. It closes on `{"end": true}`, on [`PUT /settings/servo`](#put-settingsservo), or after **2 minutes** without a move; an explicit close returns to the `none` pose inside the saved ranges.
+
+JSON body: either `index` + `angle`, or `{"end": true}`.
+
+| Field | Type | Range |
+| --- | --- | --- |
+| `index` | integer | `0`–`4` (required with `angle` when `end` is omitted) |
+| `angle` | number | `0`–`180` |
+| `end` | boolean | `true` (close the session without saving) |
+
+```bash
+curl -X POST "http://tiny-engineer.local/servo/calibrate" -H "Content-Type: application/json" -d '{"index":2,"angle":110}'
+curl -X POST "http://tiny-engineer.local/servo/calibrate" -H "Content-Type: application/json" -d '{"end":true}'
+```
+
+```json
+{ "ok": true, "calibrate": "servo", "active": true, "index": 2, "angle": 110 }
+```
+
+Wrong fields return **400** and do not move any servo: `invalid end` (`end` present but not `true`), `invalid index`, `invalid angle` (same rules as `/setup/servo`).
+
+### `PUT /settings/servo`
+
+Save the safe range of **one** joint, outside setup AP mode. The other joints keep their saved ranges. Applies immediately and closes an open calibration session (the robot returns to the `none` pose inside the new range). Requires a provisioned robot and Bearer when auth is enabled. Same JSON shape as `GET /settings`.
+
+| Field | Type | Range |
+| --- | --- | --- |
+| `index` | integer | `0`–`4` (`head, neck, left, right, body`) |
+| `min` | integer | `0`–`180`, below `max` |
+| `max` | integer | `0`–`180`, above `min` |
+
+```bash
+curl -X PUT "http://tiny-engineer.local/settings/servo" -H "Content-Type: application/json" -d '{"index":2,"min":80,"max":147}'
+```
+
+`index` missing, not an integer or outside `0`–`4` → **400** `invalid index`. `min` or `max` missing, not an integer, outside `0`–`180`, or `min` not below `max` → **400** `invalid range`.
 
 ### `POST /setup/led`
 
@@ -665,6 +706,8 @@ Wrong params return **400**:
 | `missing name` | Query param `name` absent |
 | `unknown animation` | `name` not `none`, `typing`, `reading`, `thinking`, `talking`, `ring`, `welcome`, `attention`, `error`, `abort`, `dead`, `wakeup`, or `sleep` |
 
+While a [calibration session](#post-servocalibrate) is open, a valid request returns **409** `servo calibration active` and does not change the animation.
+
 ### `POST /play`
 
 Streams a WAV to the speaker while one animation runs, then returns to the continuous animation (`typing`, `reading`, `thinking`, `talking`) that was running before the request, otherwise to `none`. The body is played as it arrives, so clips of any length need no storage on the robot. The response comes when the clip ends.
@@ -700,7 +743,8 @@ Errors arrive before any audio plays:
 
 | Status | Body | When |
 | --- | --- | --- |
-| `400` | `{"ok":false,"error":"..."}` | Bad body or fields on `/settings`, `/settings/wifi`, `/test/servo` or `/setup/*`, or bad `/anim` or `/play` params (see tables above) |
+| `400` | `{"ok":false,"error":"..."}` | Bad body or fields on `/settings`, `/settings/wifi`, `/settings/servo`, `/test/servo`, `/servo/calibrate` or `/setup/*`, or bad `/anim` or `/play` params (see tables above) |
+| `409` | `{"ok":false,"error":"servo calibration active"}` | `POST /anim` while a [calibration session](#post-servocalibrate) is open |
 | `401` | `{"ok":false,"error":"unauthorized"}` | Access token configured and `Authorization: Bearer` missing or wrong |
 | `404` | `{"ok":false,"error":"not found"}` | Unknown path |
 | `415` | `{"ok":false,"error":"..."}` | `/play` body is not a supported WAV |

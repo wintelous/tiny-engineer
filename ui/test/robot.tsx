@@ -125,6 +125,17 @@ export function fakeRobot({
         robot.settings = applySettingsPatch(robot.settings, request.json as Partial<Settings>);
       }
 
+      if (request.path === "/settings/servo" && request.method === "PUT") {
+        const { index, min, max } = request.json as { index: number; min: number; max: number };
+
+        robot.settings.servo_mins = robot.settings.servo_mins.map((each, i) =>
+          i === index ? min : each,
+        );
+        robot.settings.servo_maxs = robot.settings.servo_maxs.map((each, i) =>
+          i === index ? max : each,
+        );
+      }
+
       if (request.path === "/settings/wifi" && request.method === "PUT") {
         robot.settings.wifi_networks = (request.json as WifiNetwork[]).map(({ ssid }) => ssid);
         robot.settings.wifi_configured = true;

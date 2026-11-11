@@ -10,6 +10,7 @@
 #include "audio/audio.h"
 #include "display/eyes.h"
 #include "hardware/rgb.h"
+#include "hardware/servo_calibration.h"
 #include "hardware/servo_wrapper.h"
 #include "network/wifi_connect.h"
 #include "settings/settings.h"
@@ -43,6 +44,12 @@ bool ignoreWakeupIfAwake(uint32_t nowMs) {
 }
 
 void applyAnimation(AnimationId id, uint32_t nowMs) {
+  // Calibration owns the servos; drop anything that would move them.
+  if (servoCalibrationActive()) {
+    g_hasPendingAnimation = false;
+    return;
+  }
+
   if (id == AnimationId::Wakeup && ignoreWakeupIfAwake(nowMs)) {
     return;
   }

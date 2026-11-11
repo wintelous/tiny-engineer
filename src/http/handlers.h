@@ -18,6 +18,7 @@ void handleSettingsGet(WebServer& server);
 void handleSettingsPost(WebServer& server);
 void handleSettingsReset(WebServer& server);
 void handleSettingsWifiPut(WebServer& server);
+void handleSettingsServoPut(WebServer& server);
 
 void handleActionsGet(WebServer& server);
 void handleActionsPut(WebServer& server);
@@ -31,6 +32,7 @@ void handleLedTest(WebServer& server);
 void handleServoTest(WebServer& server);
 
 void handleSetupServo(WebServer& server);
+void handleServoCalibrate(WebServer& server);
 void handleSetupLed(WebServer& server);
 void handleSetupAudio(WebServer& server);
 void handleSetupOled(WebServer& server);
