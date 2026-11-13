@@ -128,7 +128,10 @@ export function ApiReference() {
               <code>push_button_pin</code>
             </td>
             <td>integer</td>
-            <td>Extension-port GPIO 6, 7, 20, or 21 (default 20; persists when off; immediate)</td>
+            <td>
+              Extension-port GPIO 6, 7, 20, or 21, or 9 (BOOT button) (default 20; persists when
+              off; immediate)
+            </td>
           </tr>
           <tr>
             <td>

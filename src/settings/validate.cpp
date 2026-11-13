@@ -129,8 +129,9 @@ bool ServoRanges::valid() const {
   return true;
 }
 
+// GPIO9 is the module's BOOT button (active-low, usable once the app runs).
 bool settingsValidatePushButtonPin(uint8_t pin) {
-  return pin == 6 || pin == 7 || pin == 20 || pin == 21;
+  return pin == 6 || pin == 7 || pin == 9 || pin == 20 || pin == 21;
 }
 
 bool settingsValidatePushButtonSound(const char* sound) {
