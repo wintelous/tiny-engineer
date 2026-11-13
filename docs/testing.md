@@ -9,9 +9,10 @@ Unity on the host. Compiles `src/settings/validate.cpp` plus header-only helpers
 ```bash
 pio test -e native
 python3 scripts/test_audio_pack.py
+python3 scripts/test_wav_task.py
 ```
 
-`pio run` builds firmware. Native tests are **`pio test -e native`**, not `pio run -e native`. `scripts/test_audio_pack.py` checks the stock WAV copy and mod overlay (no PlatformIO, no hardware). On GitHub Actions the firmware job also runs `pio run -t buildfs` and uploads `bootloader.bin`, `partitions.bin`, `firmware.bin`, and `littlefs.bin` as the `firmware-<sha>` artifact.
+`pio run` builds firmware. Native tests are **`pio test -e native`**, not `pio run -e native`. `scripts/test_audio_pack.py` checks the stock WAV copy and mod overlay (no PlatformIO, no hardware). `scripts/test_wav_task.py` compiles [`wav_stream.cpp`](../src/audio/wav_stream.cpp) against FreeRTOS and LittleFS mocks with the host C++ compiler and checks that a clip plays to the end on the audio task with no main-loop pumping. On GitHub Actions the firmware job also runs `pio run -t buildfs` and uploads `bootloader.bin`, `partitions.bin`, `firmware.bin`, and `littlefs.bin` as the `firmware-<sha>` artifact.
 
 ## OLED expressions
 

@@ -40,6 +40,8 @@ jobs:
         run: pip install -U platformio
       - name: Audio pack tests
         run: python3 scripts/test_audio_pack.py
+      - name: WAV playback task tests
+        run: python3 scripts/test_wav_task.py
       - name: PCBA host tests
         run: python3 scripts/test_pcba_test.py
       - name: PCBA web tests

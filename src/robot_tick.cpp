@@ -15,8 +15,7 @@ void tickRobot() {
   pollWifi();
   updateProvisioningOled(now);
   updateAnimation();
-  // Button SFX (and any other orphan LittleFS stream) needs a pump when no
-  // animation owns the stream; anim updates already call wavStreamUpdate.
+  // Refresh volume and completion state for orphan SFX; the audio task feeds DMA.
   if (wavStreamIsActive() && !animationDrivesWavStream(getAnimation())) {
     wavStreamUpdate();
   }

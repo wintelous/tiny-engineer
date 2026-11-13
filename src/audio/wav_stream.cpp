@@ -4,6 +4,10 @@
 #include <ESP_I2S.h>
 #include <FS.h>
 #include <LittleFS.h>
+#include <atomic>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <freertos/semphr.h>
 
 #include "audio/audio.h"
 #include "audio/wav_header.h"
@@ -32,8 +36,12 @@ constexpr WavClipDef kClips[kWavClipCount] = {
 };
 
 File g_file;
-bool g_playing = false;
+std::atomic<bool> g_playing{false};
+std::atomic<bool> g_finished{false};
+std::atomic<uint8_t> g_volume{100};
 WavClip g_active = WavClip::Bell;
+SemaphoreHandle_t g_fileMutex = nullptr;
+TaskHandle_t g_audioTask = nullptr;
 
 void logAudioStorageContents() {
   File root = LittleFS.open("/");
@@ -82,13 +90,42 @@ bool pumpWavChunk(File& file) {
     return false;
   }
 
-  writeMonoToSpeaker(samples, bytesRead / 2);
+  writeMonoToSpeaker(samples, bytesRead / 2, g_volume.load());
 
   return file.available() > 0;
 }
 
 const WavClipDef& clipDef(WavClip clip) {
   return kClips[static_cast<uint8_t>(clip)];
+}
+
+void feedAudio(void*) {
+  for (;;) {
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    while (g_playing) {
+      xSemaphoreTake(g_fileMutex, portMAX_DELAY);
+      if (g_playing && !pumpWavChunk(g_file)) {
+        g_file.close();
+        g_finished = true;
+        g_playing = false;
+      }
+      xSemaphoreGive(g_fileMutex);
+      vTaskDelay(1);
+    }
+  }
+}
+
+bool ensureAudioTask() {
+  if (g_audioTask) return true;
+  g_fileMutex = xSemaphoreCreateMutex();
+  if (!g_fileMutex) return false;
+  // Feed DMA independently of the slow OLED transfers in the animation loop.
+  if (xTaskCreate(feedAudio, "wav_audio", 6144, nullptr, 2, &g_audioTask) != pdPASS) {
+    vSemaphoreDelete(g_fileMutex);
+    g_fileMutex = nullptr;
+    return false;
+  }
+  return true;
 }
 
 }  // namespace
@@ -112,9 +149,16 @@ bool wavStreamStart(WavClip clip) {
     return false;
   }
 
+  if (!ensureAudioTask()) {
+    serialLogPrintln("WAV failed: audio task unavailable");
+    return false;
+  }
+
+  xSemaphoreTake(g_fileMutex, portMAX_DELAY);
   g_file = LittleFS.open(def.path, "r");
 
   if (!g_file) {
+    xSemaphoreGive(g_fileMutex);
     logAudioStorageContents();
     serialLogPrint(def.label);
     serialLogPrint(" failed: ");
@@ -128,6 +172,7 @@ bool wavStreamStart(WavClip clip) {
 
   if (header != WavHeaderResult::Ok) {
     g_file.close();
+    xSemaphoreGive(g_fileMutex);
     serialLogPrint(def.label);
     serialLogPrint(" failed: invalid WAV (");
     serialLogPrint(wavHeaderResultText(header));
@@ -136,38 +181,34 @@ bool wavStreamStart(WavClip clip) {
   }
 
   g_active = clip;
+  g_finished = false;
+  g_volume = settingsVolume();
   g_playing = true;
+  xSemaphoreGive(g_fileMutex);
   serialLogPrint("Playing ");
   serialLogPrintln(def.path);
+  xTaskNotifyGive(g_audioTask);
   return true;
 }
 
 bool wavStreamUpdate() {
-  if (!g_playing) {
-    return false;
-  }
-
-  const WavClipDef& def = clipDef(g_active);
-
-  if (!pumpWavChunk(g_file)) {
-    if (g_file) {
-      g_file.close();
-    }
-    g_playing = false;
-    serialLogPrint(def.label);
+  g_volume = settingsVolume();
+  if (g_finished.exchange(false)) {
+    serialLogPrint(clipDef(g_active).label);
     serialLogPrintln(" OK");
-    return false;
   }
-
-  return true;
+  return g_playing;
 }
 
 void wavStreamStop() {
+  if (!g_fileMutex) return;
+  xSemaphoreTake(g_fileMutex, portMAX_DELAY);
+  g_playing = false;
+  g_finished = false;
   if (g_file) {
     g_file.close();
   }
-
-  g_playing = false;
+  xSemaphoreGive(g_fileMutex);
 }
 
 bool wavStreamIsPlaying(WavClip clip) {
