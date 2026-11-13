@@ -59,6 +59,7 @@ bool playWavBlocking(
   }
 
   while (wavStreamUpdate()) {
+    delay(1);
   }
 
   showOledText(line1, "OK");
@@ -99,12 +100,10 @@ bool initAudioStorage() {
   return true;
 }
 
-void writeMonoToSpeaker(const int16_t* samples, size_t count) {
+void writeMonoToSpeaker(const int16_t* samples, size_t count, uint8_t volume) {
   constexpr size_t FRAMES = 256;
 
   int16_t buffer[FRAMES * 2];
-
-  const uint8_t volume = settingsVolume();
 
   while (count > 0) {
     const size_t framesThisTime = count < FRAMES ? count : FRAMES;
@@ -130,6 +129,10 @@ void writeMonoToSpeaker(const int16_t* samples, size_t count) {
     samples += framesThisTime;
     count -= framesThisTime;
   }
+}
+
+void writeMonoToSpeaker(const int16_t* samples, size_t count) {
+  writeMonoToSpeaker(samples, count, settingsVolume());
 }
 
 void playTone(
@@ -328,6 +331,7 @@ bool playDead() {
 }
 
 void runSoundTest() {
+  stopAllWavPlayback();
   serialLogPrintln();
   serialLogPrintln("==========================");
   serialLogPrintln("SOUND TEST");
