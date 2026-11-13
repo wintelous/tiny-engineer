@@ -60,7 +60,7 @@ export interface AnimationReply {
   animation: string;
 }
 
-export type ActionDo = "sound" | "anim";
+export type ActionDo = "sound" | "anim" | "show_ip";
 
 export interface ActionRow {
   on: string;

@@ -35,6 +35,9 @@ void startEyesForWake(uint32_t now);
 void stopEyes();
 void updateEyes(uint32_t now);
 bool eyesActive();
+// While held, the eyes keep their state but draw nothing, so another screen
+// (the IP overlay) can own the OLED. Releasing redraws them on the next update.
+void holdEyes(bool held);
 
 void requestSleepEyeClose(uint32_t now);
 void requestSleepEyeOpen(uint32_t now);
