@@ -117,6 +117,7 @@ curl -X POST "http://tiny-engineer.local/test/servo" -H "Content-Type: applicati
 | `POST` | `/actions/test` | Simulate an event type for Actions (no outbound publish) |
 | `POST` | `/settings` | Update NVS settings from a JSON object; the reply carries `reboot_required`, true once `hostname`, `loading` or the WiFi networks differ from what the robot booted with. `servo_mins` / `servo_maxs` (integer arrays), `rgb_order` and `oled_rotate_180` (boolean) are setup-AP-only |
 | `PUT` | `/settings/wifi` | Replace the saved WiFi networks (JSON array of 1 to 5); first one tested in setup AP mode |
+| `PUT` | `/settings/servo` `{"index","min","max"}` | Save one joint's safe range outside setup AP; ends a calibration session |
 | `POST` | `/settings/reset` | Factory reset settings to defaults (clears WiFi, keeps servo ranges, RGB mapping, and screen rotation); power-cycle to reopen setup AP |
 | `POST` | `/servos/park` | Center all servos at mid, flush pose NVS, hold PWM until reboot |
 | `POST` | `/test/audio` | `{"ok":true,"test":"audio"}` after `runSoundTest()` |
@@ -125,6 +126,7 @@ curl -X POST "http://tiny-engineer.local/test/servo" -H "Content-Type: applicati
 | `POST` | `/test/movement` | `{"ok":true,"test":"movement"}` after `runServoTest()` |
 | `POST` | `/test/led` | `{"ok":true,"test":"led"}` after `runRgbTest()` |
 | `POST` | `/test/servo` `{"index","angle"}` | `{"ok":true,"test":"servo","index":N,"angle":A}` after `moveServoSmooth()` |
+| `POST` | `/servo/calibrate` `{"index","angle"}` or `{"end":true}` | Slow 0–180° move outside setup AP; pauses animations (`/anim` → `409`) until `end`, `PUT /settings/servo`, or 2 min idle |
 | `POST` | `/setup/servo` `{"all":90}` or `{"index","angle"}` | Setup AP only; slow 0–180° move (`SERVO_CALIB_SPEED_DEG_S`) |
 | `POST` | `/setup/led` `{"color":"R"}` / `G` / `B` or `{"byte":0}` / `1` / `2` | Setup AP only; light logical RGB or one WS2812 wire byte; an empty body releases the hold |
 | `POST` | `/setup/audio` | Setup AP only; play `welcome.wav` (`playWelcome()`) |

@@ -7,6 +7,7 @@
 #include "animation/util.h"
 #include "pins.h"
 #include "servos.h"
+#include "hardware/servo_calibration.h"
 #include "hardware/servo_wrapper.h"
 #include "serial_log.h"
 #include "settings/settings.h"
@@ -231,7 +232,7 @@ void pollServoPoseSave() {
 }
 
 bool servoOutputsHoldActive() {
-  return g_parkHoldUntilReboot;
+  return g_parkHoldUntilReboot || servoCalibrationActive();
 }
 
 void setServoParkHoldUntilReboot(bool hold) {

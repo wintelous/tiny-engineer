@@ -45,4 +45,69 @@ describe("servo page", () => {
       expect(robot.lastPost("/test/servo")?.json).toEqual({ index: 0, angle: 100 }),
     );
   });
+
+  it("calibrates one joint and saves only its range", async () => {
+    const robot = fakeRobot({
+      settings: { servo_mins: [70, 65, 80, 76, 54], servo_maxs: [140, 153, 147, 145, 148] },
+    });
+    const { user, click } = renderApp("/servo");
+
+    await user.selectOptions(await screen.findByLabelText("Joint"), "2");
+    await click("Start calibration");
+
+    await waitFor(() =>
+      expect(robot.lastPost("/servo/calibrate")?.json).toEqual({ index: 2, angle: 114 }),
+    );
+
+    await click("Nudge -5°");
+    await click("Nudge -1°");
+    await waitFor(() =>
+      expect(robot.lastPost("/servo/calibrate")?.json).toEqual({ index: 2, angle: 108 }),
+    );
+    await click("Set as min");
+    await click("Nudge +5°");
+    await click("Set as max");
+
+    expect(screen.getByText("New range: 108–113°")).toBeTruthy();
+
+    await click("Save range");
+
+    await waitFor(() =>
+      expect(robot.sent("PUT", "/settings/servo").at(-1)?.json).toEqual({
+        index: 2,
+        min: 108,
+        max: 113,
+      }),
+    );
+    expect(await screen.findByText("Saved range: 108–113°")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Start calibration" })).toBeTruthy();
+  });
+
+  it("blocks saving when min is not below max", async () => {
+    fakeRobot();
+    const { click } = renderApp("/servo");
+
+    await click("Start calibration");
+    await click("Set as max");
+    await click("Nudge +1°");
+    await click("Set as min");
+
+    expect(screen.getByText("Min (91°) must be below max (90°)").classList.contains("warn")).toBe(
+      true,
+    );
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Save range" }).disabled).toBe(
+      true,
+    );
+  });
+
+  it("cancel ends the session without saving", async () => {
+    const robot = fakeRobot();
+    const { click } = renderApp("/servo");
+
+    await click("Start calibration");
+    await click("Cancel");
+
+    await waitFor(() => expect(robot.lastPost("/servo/calibrate")?.json).toEqual({ end: true }));
+    expect(robot.sent("PUT", "/settings/servo")).toHaveLength(0);
+  });
 });

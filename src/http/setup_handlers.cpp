@@ -4,10 +4,12 @@
 #include "display/oled.h"
 #include "hardware/pca9685_servos.h"
 #include "hardware/rgb.h"
+#include "hardware/servo_calibration.h"
 #include "http/handlers.h"
 #include "http/request.h"
 #include "http/response.h"
 #include "settings/settings.h"
+#include "sleep.h"
 
 namespace {
 
@@ -89,6 +91,46 @@ void handleSetupServo(WebServer& server) {
   moveServoSmoothElectrical(move->index, move->angle);
 
   JsonDocument reply = setupReply("servo");
+  move->addTo(reply);
+  sendJson(server, 200, reply);
+}
+
+void handleServoCalibrate(WebServer& server) {
+  JsonDocument body;
+
+  if (!readJsonBody(server, body)) {
+    return;
+  }
+
+  JsonDocument reply;
+  reply["ok"] = true;
+  reply["calibrate"] = "servo";
+
+  if (!body["end"].isUnbound()) {
+    if (body["end"] != true) {
+      sendError(server, 400, "invalid end");
+      return;
+    }
+
+    servoCalibrationEnd();
+    reply["active"] = false;
+    sendJson(server, 200, reply);
+    return;
+  }
+
+  const std::optional<ServoMove> move = ServoMove::read(server, body.as<JsonObjectConst>());
+
+  if (!move) {
+    return;
+  }
+
+  servoCalibrationTouch();
+  noteActivity(millis());
+  moveServoSmoothElectrical(move->index, move->angle);
+  // The move blocks; count the session from when it finished.
+  servoCalibrationTouch();
+
+  reply["active"] = true;
   move->addTo(reply);
   sendJson(server, 200, reply);
 }

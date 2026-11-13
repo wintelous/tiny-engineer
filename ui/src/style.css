@@ -768,6 +768,18 @@ code {
   margin-top: 0;
 }
 
+.calib-nudges {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.calib-nudges .btn {
+  text-align: center;
+  font-weight: 600;
+}
+
 .servo-slider-wrap {
   flex: 1;
   min-width: 0;

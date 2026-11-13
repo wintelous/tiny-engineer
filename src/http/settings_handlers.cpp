@@ -7,6 +7,7 @@
 #include "events/hub.h"
 #include "extensions/push_button.h"
 #include "hardware/rgb.h"
+#include "hardware/servo_calibration.h"
 #include "http/handlers.h"
 #include "http/request.h"
 #include "http/response.h"
@@ -247,6 +248,56 @@ void handleSettingsPost(WebServer& server) {
     setRgb(0, 0, 0);
     serialLogPrintln("USB-only mode: setup AP stopped; use serial CLI");
   }
+}
+
+void handleSettingsServoPut(WebServer& server) {
+  JsonDocument body;
+
+  if (!readJsonBody(server, body)) {
+    return;
+  }
+
+  const JsonVariantConst index = body["index"];
+  const JsonVariantConst min = body["min"];
+  const JsonVariantConst max = body["max"];
+
+  if (!index.is<int>() || index.as<int>() < 0 ||
+      index.as<int>() >= static_cast<int>(SETTINGS_SERVO_COUNT)) {
+    sendError(server, 400, "invalid index");
+    return;
+  }
+
+  const auto angleOk = [](JsonVariantConst value) {
+    return value.is<int>() && value.as<int>() >= 0 &&
+           value.as<int>() <= static_cast<int>(SETTINGS_SERVO_ANGLE_MAX);
+  };
+
+  if (!angleOk(min) || !angleOk(max) || min.as<int>() >= max.as<int>()) {
+    sendError(server, 400, "invalid range");
+    return;
+  }
+
+  ServoRanges ranges;
+
+  for (size_t i = 0; i < SETTINGS_SERVO_COUNT; i++) {
+    ranges.mins[i] = static_cast<uint8_t>(settingsServoMin(static_cast<int>(i)));
+    ranges.maxs[i] = static_cast<uint8_t>(settingsServoMax(static_cast<int>(i)));
+  }
+
+  ranges.mins[index.as<int>()] = static_cast<uint8_t>(min.as<int>());
+  ranges.maxs[index.as<int>()] = static_cast<uint8_t>(max.as<int>());
+
+  SettingsPatch patch;
+  patch.servoRanges = ranges;
+
+  if (!saveSettings(patch)) {
+    sendError(server, 400, "save failed");
+    return;
+  }
+
+  // Leave the joint inside its new range.
+  servoCalibrationEnd();
+  sendJson(server, 200, settingsJson());
 }
 
 void handleSettingsWifiPut(WebServer& server) {

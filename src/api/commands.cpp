@@ -9,6 +9,7 @@
 #include "extensions/push_button.h"
 #include "hardware/pca9685_servos.h"
 #include "hardware/rgb.h"
+#include "hardware/servo_calibration.h"
 #include "hardware/servo_wrapper.h"
 #include "network/wifi_connect.h"
 #include "servos.h"
@@ -22,6 +23,10 @@ ApiResult apiSetAnimation(const char* name) {
   AnimationId id;
   if (!parseAnimationName(name, id)) {
     return {false, 400, "unknown animation"};
+  }
+
+  if (servoCalibrationActive()) {
+    return {false, 409, "servo calibration active"};
   }
 
   setAnimation(id);

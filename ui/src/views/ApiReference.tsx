@@ -26,6 +26,12 @@ const ROUTES = [
   ["POST", "/test/movement", "All servos exercise"],
   ["POST", "/test/led", "RGB LED cycle"],
   ["POST", "/test/servo", "Move one servo (see parameters below)"],
+  [
+    "POST",
+    "/servo/calibrate",
+    "Calibrate one joint: slow 0–180° move, pauses animations (see parameters below)",
+  ],
+  ["PUT", "/settings/servo", "Save one joint's safe range (see parameters below)"],
   ["POST", "/setup/servo", "Setup AP only: slow 0–180° move (see parameters below)"],
   [
     "POST",
@@ -437,6 +443,87 @@ export function ApiReference() {
             </td>
             <td>number</td>
             <td>0&ndash;180</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        POST <code>/servo/calibrate</code> &mdash; ~25&deg;/s, no safe-range clamp. Pauses
+        animations until <code>end</code>, <code>PUT /settings/servo</code>, or 2 minutes without a
+        move. JSON body fields:
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Type</th>
+            <th>Range</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <code>index</code>
+            </td>
+            <td>integer</td>
+            <td>
+              0&ndash;4 (required with <code>angle</code> when <code>end</code> is omitted)
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <code>angle</code>
+            </td>
+            <td>number</td>
+            <td>0&ndash;180</td>
+          </tr>
+          <tr>
+            <td>
+              <code>end</code>
+            </td>
+            <td>boolean</td>
+            <td>
+              <code>true</code> (close the session without saving)
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        PUT <code>/settings/servo</code> &mdash; saves one joint&apos;s range; other joints keep
+        theirs. JSON body fields:
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Type</th>
+            <th>Range</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <code>index</code>
+            </td>
+            <td>integer</td>
+            <td>0&ndash;4 (head, neck, left, right, body)</td>
+          </tr>
+          <tr>
+            <td>
+              <code>min</code>
+            </td>
+            <td>integer</td>
+            <td>
+              0&ndash;180, below <code>max</code>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <code>max</code>
+            </td>
+            <td>integer</td>
+            <td>
+              0&ndash;180, above <code>min</code>
+            </td>
           </tr>
         </tbody>
       </table>
