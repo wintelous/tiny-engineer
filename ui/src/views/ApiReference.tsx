@@ -226,11 +226,11 @@ export function ApiReference() {
       <p>
         <code>GET</code>/<code>PUT /settings/actions</code> — JSON object with array{" "}
         <code>actions</code> (0–16 rows). Each row: string <code>on</code> (event pattern,{" "}
-        <code>*</code> wildcards), string <code>do</code> (<code>sound</code> / <code>anim</code>),
-        plus <code>sound</code> (<code>bell</code>/<code>click</code>) or <code>anim</code>{" "}
-        (animation name). <code>POST /actions/test</code> body{" "}
-        <code>{'{"type":"button.click"}'}</code> runs matching Actions without publishing an
-        outbound event.
+        <code>*</code> wildcards), string <code>do</code> (<code>sound</code> / <code>anim</code> /{" "}
+        <code>show_ip</code>), plus <code>sound</code> (<code>bell</code>/<code>click</code>) or{" "}
+        <code>anim</code> (animation name); <code>show_ip</code> takes no param.{" "}
+        <code>POST /actions/test</code> body <code>{'{"type":"button.click"}'}</code> runs matching
+        Actions without publishing an outbound event.
       </p>
       <p>
         POST <code>/anim</code> &mdash; query param <code>name</code>:

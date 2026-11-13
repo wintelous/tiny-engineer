@@ -30,6 +30,8 @@ JsonDocument actionsJson() {
       case ActionDo::Anim:
         row["anim"] = entry.anim;
         break;
+      case ActionDo::ShowIp:
+        break;
     }
   }
 
@@ -86,6 +88,8 @@ bool parseActionRow(JsonObjectConst obj, ActionEntry& out, const char*& error) {
       out.anim[ACTIONS_ANIM_MAX_LEN] = '\0';
       break;
     }
+    case ActionDo::ShowIp:
+      break;
   }
 
   if (!actionsValidateEntry(out)) {

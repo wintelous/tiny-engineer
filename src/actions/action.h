@@ -10,6 +10,7 @@ constexpr size_t ACTIONS_ANIM_MAX_LEN = 15;
 enum class ActionDo : uint8_t {
   Sound = 1,
   Anim = 2,
+  ShowIp = 3,
 };
 
 enum class ActionSound : uint8_t {

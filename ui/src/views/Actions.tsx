@@ -12,6 +12,7 @@ const MAX_ACTIONS = 16;
 const DO_OPTIONS: { value: ActionDo; label: string }[] = [
   { value: "sound", label: "Sound" },
   { value: "anim", label: "Anim" },
+  { value: "show_ip", label: "Show IP" },
 ];
 
 const EVENT_PRESETS = [
@@ -28,6 +29,10 @@ function emptyRow(): ActionRow {
 }
 
 function normalizeRow(row: ActionRow): ActionRow {
+  if (row.do === "show_ip") {
+    return { on: row.on, do: "show_ip" };
+  }
+
   if (row.do === "anim") {
     return { on: row.on, do: "anim", anim: row.anim ?? "welcome" };
   }
@@ -36,6 +41,10 @@ function normalizeRow(row: ActionRow): ActionRow {
 }
 
 function summaryFor(row: ActionRow): string {
+  if (row.do === "show_ip") {
+    return "Show IP";
+  }
+
   if (row.do === "anim") {
     const match = ANIMATIONS.find(([name]) => name === row.anim);
 
@@ -98,7 +107,9 @@ export function Actions() {
   }
 
   function setKind(index: number, kind: ActionDo) {
-    if (kind === "anim") {
+    if (kind === "show_ip") {
+      updateRow(index, { do: "show_ip", sound: undefined, anim: undefined });
+    } else if (kind === "anim") {
       updateRow(index, { do: "anim", anim: "welcome", sound: undefined });
     } else {
       updateRow(index, { do: "sound", sound: "click", anim: undefined });
@@ -266,6 +277,8 @@ export function Actions() {
                           <option value="click">Click</option>
                           <option value="bell">Bell</option>
                         </select>
+                      ) : row.do === "show_ip" ? (
+                        <span className="hint">IP on the screen for 4 s</span>
                       ) : (
                         <select
                           value={row.anim ?? "welcome"}

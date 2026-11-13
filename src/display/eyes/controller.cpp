@@ -30,6 +30,7 @@ Eye g_leftEye = eyes::DEFAULT_LEFT;
 Eye g_rightEye = eyes::DEFAULT_RIGHT;
 
 bool g_eyesActive = false;
+bool g_eyesHeld = false;
 EyeMode g_eyeMode = EyeMode::Idle;
 uint32_t g_modeStartedMs = 0;
 
@@ -66,6 +67,10 @@ void updateModePose(uint32_t now) {
 }
 
 void drawCurrentEyes(uint32_t now) {
+  if (g_eyesHeld) {
+    return;
+  }
+
   const EyeStyleRenderer* style = currentEyeStyle();
   style->draw(
     g_eyeMode,
@@ -257,7 +262,9 @@ void startEyesForWake(uint32_t now) {
 }
 
 SleepEyeResult updateSleepEyes(uint32_t now) {
-  if (g_sleepEyeAnim == SleepEyeAnim::None) {
+  // Held: pause the open/close animation so sleep does not switch the OLED
+  // off under the overlay.
+  if (g_sleepEyeAnim == SleepEyeAnim::None || g_eyesHeld) {
     return SleepEyeResult::Running;
   }
 
@@ -331,6 +338,13 @@ void updateEyes(uint32_t now) {
 
 bool eyesActive() {
   return g_eyesActive;
+}
+
+void holdEyes(bool held) {
+  if (g_eyesHeld && !held) {
+    g_forceRedraw = true;
+  }
+  g_eyesHeld = held;
 }
 
 const Eye& leftEye() {

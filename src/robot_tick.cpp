@@ -4,6 +4,7 @@
 
 #include "animation.h"
 #include "audio/wav_stream.h"
+#include "display/ip_overlay.h"
 #include "display/oled.h"
 #include "hardware/rgb.h"
 #include "hardware/servo_wrapper.h"
@@ -14,6 +15,7 @@ void tickRobot() {
   const uint32_t now = millis();
   pollWifi();
   updateProvisioningOled(now);
+  updateIpOverlay(now);
   updateAnimation();
   // Button SFX (and any other orphan LittleFS stream) needs a pump when no
   // animation owns the stream; anim updates already call wavStreamUpdate.

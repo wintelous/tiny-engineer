@@ -27,6 +27,10 @@ bool actionsParseDo(const char* text, ActionDo& out) {
     out = ActionDo::Anim;
     return true;
   }
+  if (strcmp(text, "show_ip") == 0) {
+    out = ActionDo::ShowIp;
+    return true;
+  }
   return false;
 }
 
@@ -51,6 +55,8 @@ const char* actionsDoName(ActionDo kind) {
       return "sound";
     case ActionDo::Anim:
       return "anim";
+    case ActionDo::ShowIp:
+      return "show_ip";
   }
   return "";
 }
@@ -75,6 +81,8 @@ bool actionsValidateEntry(const ActionEntry& entry) {
       return entry.sound == ActionSound::Bell || entry.sound == ActionSound::Click;
     case ActionDo::Anim:
       return nonEmptyTerminated(entry.anim, sizeof(entry.anim), ACTIONS_ANIM_MAX_LEN);
+    case ActionDo::ShowIp:
+      return true;
   }
   return false;
 }

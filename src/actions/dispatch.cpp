@@ -1,9 +1,12 @@
 #include "actions/dispatch.h"
 
+#include <Arduino.h>
+
 #include "actions/action_list.h"
 #include "actions/pattern.h"
 #include "api/commands.h"
 #include "audio/audio.h"
+#include "display/ip_overlay.h"
 #include "settings/settings.h"
 
 namespace {
@@ -15,6 +18,9 @@ void runEntry(const ActionEntry& entry) {
       break;
     case ActionDo::Anim:
       (void)apiSetAnimation(entry.anim);
+      break;
+    case ActionDo::ShowIp:
+      showIpOverlay(millis());
       break;
   }
 }

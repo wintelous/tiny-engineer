@@ -290,14 +290,15 @@ curl http://tiny-engineer.local/settings/actions
   "ok": true,
   "actions": [
     { "on": "button.double_click", "do": "sound", "sound": "click" },
-    { "on": "button.*", "do": "anim", "anim": "welcome" }
+    { "on": "button.*", "do": "anim", "anim": "welcome" },
+    { "on": "button.long_click", "do": "show_ip" }
   ]
 }
 ```
 
 ### `PUT /settings/actions`
 
-Replace the whole Actions list. Body is a JSON object with array `actions` (0–**16** rows). Each row needs string `on` (1–47 chars; `*` matches any sequence in the event type) and string `do` (`sound` or `anim`), plus the matching param: `sound` (`bell`/`click`) or `anim` (animation name). Extra fields are ignored. Applies immediately. When an outbound event is published, every matching row runs in list order. Requires Bearer when auth is enabled.
+Replace the whole Actions list. Body is a JSON object with array `actions` (0–**16** rows). Each row needs string `on` (1–47 chars; `*` matches any sequence in the event type) and string `do` (`sound`, `anim`, or `show_ip`), plus the matching param: `sound` (`bell`/`click`) or `anim` (animation name). `show_ip` takes no param: it shows the robot's WiFi IP on the OLED for 4 s (`No IP` when offline), then the eyes come back; a sleeping robot's screen turns off again. Extra fields are ignored. Applies immediately. When an outbound event is published, every matching row runs in list order. Requires Bearer when auth is enabled.
 
 ```bash
 curl -X PUT "http://tiny-engineer.local/settings/actions" \
