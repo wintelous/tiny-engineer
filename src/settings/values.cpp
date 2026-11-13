@@ -57,6 +57,7 @@ SettingsValues SettingsValues::defaults() {
 
   strlcpy(values.rgbOrder, SETTINGS_DEFAULT_RGB_ORDER, sizeof(values.rgbOrder));
   values.oledRotate180 = SETTINGS_DEFAULT_OLED_ROTATE_180;
+  values.wifiTxPowerQdbm = SETTINGS_DEFAULT_WIFI_TX_POWER_QDBM;
   return values;
 }
 
@@ -70,6 +71,10 @@ void SettingsValues::apply(const SettingsPatch& patch) {
   continuousTimeoutMin = patch.continuousTimeoutMin.value_or(continuousTimeoutMin);
   servoRanges = patch.servoRanges.value_or(servoRanges);
   oledRotate180 = patch.oledRotate180.value_or(oledRotate180);
+
+  if (patch.wifiTxPowerDbm) {
+    wifiTxPowerQdbm = settingsWifiTxPowerDbmToQdbm(*patch.wifiTxPowerDbm);
+  }
 
   if (patch.hostname != nullptr) {
     strlcpy(hostname, patch.hostname, sizeof(hostname));
@@ -110,7 +115,7 @@ void SettingsValues::log(const char* prefix) const {
     "push_button=%s push_button_pin=%u actions=%u "
     "continuous_timeout=%umin loading=%s eyes_style=%s "
     "access_token=%s link_mode=%s wifi_networks=%u servos=%u-%u;%u-%u;%u-%u;%u-%u;%u-%u "
-    "rgb_order=%s oled_rotate_180=%s",
+    "rgb_order=%s oled_rotate_180=%s wifi_tx_power=%u.%02udBm",
     prefix,
     static_cast<unsigned>(sleepTimeoutMin),
     hostname,
@@ -128,7 +133,9 @@ void SettingsValues::log(const char* prefix) const {
     r.mins[0], r.maxs[0], r.mins[1], r.maxs[1], r.mins[2], r.maxs[2], r.mins[3], r.maxs[3],
     r.mins[4], r.maxs[4],
     rgbOrder,
-    oledRotate180 ? "on" : "off"
+    oledRotate180 ? "on" : "off",
+    static_cast<unsigned>(wifiTxPowerQdbm / 4),
+    static_cast<unsigned>((wifiTxPowerQdbm % 4) * 25)
   );
   serialLogPrintln(line);
 }

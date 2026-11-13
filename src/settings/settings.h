@@ -41,6 +41,11 @@ constexpr uint8_t SETTINGS_SERVO_ANGLE_MAX = 180;
 constexpr size_t SETTINGS_RGB_ORDER_MAX_LEN = 3;
 constexpr const char* SETTINGS_DEFAULT_RGB_ORDER = "GRB";
 constexpr bool SETTINGS_DEFAULT_OLED_ROTATE_180 = false;
+// Wi-Fi transmit power cap in quarter-dBm (ESP-IDF units), sent as dBm on the
+// API. 20 dBm is the ESP32-C3 PHY default, so the stock board keeps its power.
+constexpr uint8_t SETTINGS_DEFAULT_WIFI_TX_POWER_QDBM = 80;
+constexpr uint8_t SETTINGS_WIFI_TX_POWER_MIN_QDBM = 8;   // 2 dBm
+constexpr uint8_t SETTINGS_WIFI_TX_POWER_MAX_QDBM = 80;  // 20 dBm
 
 struct ServoRanges {
   uint8_t mins[SETTINGS_SERVO_COUNT];
@@ -67,6 +72,8 @@ struct SettingsPatch {
   std::optional<ServoRanges> servoRanges;
   const char* rgbOrder = nullptr;
   std::optional<bool> oledRotate180;
+  // dBm, 2-20 in 0.5 dBm steps.
+  std::optional<float> wifiTxPowerDbm;
 
   // API name of the first field set to an invalid value, or nullptr.
   const char* invalidField() const;
@@ -110,6 +117,8 @@ float settingsServoMin(int index);
 float settingsServoMax(int index);
 const char* settingsRgbOrder();
 bool settingsOledRotate180();
+// Saved Wi-Fi TX power cap in quarter-dBm.
+uint8_t settingsWifiTxPowerQdbm();
 
 // True once the saved hostname, loading screen or WiFi networks differ from
 // what this boot started with; those apply only after a reboot.
@@ -127,6 +136,11 @@ bool settingsValidateWifiPassword(const char* wifiPassword);
 bool settingsValidateRgbOrder(const char* rgbOrder);
 bool settingsValidatePushButtonPin(uint8_t pin);
 bool settingsValidatePushButtonSound(const char* sound);
+// 2-20 dBm in 0.5 dBm steps.
+bool settingsValidateWifiTxPowerDbm(float dbm);
+// Quarter-dBm form of the same rule, for values read back from NVS.
+bool settingsValidateWifiTxPowerQdbm(uint32_t qdbm);
+uint8_t settingsWifiTxPowerDbmToQdbm(float dbm);
 
 // True when applying the patch would leave two enabled extensions on the same GPIO.
 // Writes a plain conflict message when message/messageLen are set. Does not write NVS.

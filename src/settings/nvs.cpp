@@ -106,6 +106,14 @@ void SettingsValues::load() {
   if (g_settingsPrefs.isKey(kKeyOledRot)) {
     oledRotate180 = g_settingsPrefs.getBool(kKeyOledRot, oledRotate180);
   }
+
+  if (g_settingsPrefs.isKey(kKeyWifiTxPower)) {
+    const uint32_t stored = g_settingsPrefs.getUInt(kKeyWifiTxPower, wifiTxPowerQdbm);
+
+    if (settingsValidateWifiTxPowerQdbm(stored)) {
+      wifiTxPowerQdbm = static_cast<uint8_t>(stored);
+    }
+  }
 }
 
 namespace {
@@ -154,6 +162,7 @@ bool writeValues(const SettingsValues& values, const SettingsValues& before, boo
   putText(kKeyLinkMode, values.linkMode, before.linkMode);
   putText(kKeyRgbOrder, values.rgbOrder, before.rgbOrder);
   putBool(kKeyOledRot, values.oledRotate180, before.oledRotate180);
+  putUInt(kKeyWifiTxPower, values.wifiTxPowerQdbm, before.wifiTxPowerQdbm);
 
   if (all || memcmp(&values.servoRanges, &before.servoRanges, sizeof(ServoRanges)) != 0) {
     uint8_t blob[kServoRangesLen];

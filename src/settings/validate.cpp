@@ -1,5 +1,6 @@
 #include "settings/settings.h"
 
+#include <cmath>
 #include <cstring>
 
 #include "display/eyes/styles/eye_style.h"
@@ -42,6 +43,27 @@ bool settingsValidateHostname(const char* hostname) {
 
 bool settingsValidateVolume(uint8_t volume) {
   return volume <= SETTINGS_VOLUME_MAX;
+}
+
+bool settingsValidateWifiTxPowerQdbm(uint32_t qdbm) {
+  return qdbm >= SETTINGS_WIFI_TX_POWER_MIN_QDBM && qdbm <= SETTINGS_WIFI_TX_POWER_MAX_QDBM &&
+         qdbm % 2 == 0;
+}
+
+uint8_t settingsWifiTxPowerDbmToQdbm(float dbm) {
+  return static_cast<uint8_t>(std::lround(dbm * 4.0f));
+}
+
+bool settingsValidateWifiTxPowerDbm(float dbm) {
+  if (!std::isfinite(dbm) || dbm < 0.0f || dbm > 100.0f) {
+    return false;
+  }
+
+  // Half-dBm steps only: 8.5 passes, 8.25 and 8.3 do not.
+  const float halves = dbm * 2.0f;
+
+  return halves == std::round(halves) &&
+         settingsValidateWifiTxPowerQdbm(settingsWifiTxPowerDbmToQdbm(dbm));
 }
 
 bool settingsValidateContinuousTimeout(uint32_t continuousTimeoutMin) {
@@ -200,6 +222,10 @@ const char* SettingsPatch::invalidField() const {
 
   if (rgbOrder != nullptr && !settingsValidateRgbOrder(rgbOrder)) {
     return "rgb_order";
+  }
+
+  if (wifiTxPowerDbm && !settingsValidateWifiTxPowerDbm(*wifiTxPowerDbm)) {
+    return "wifi_tx_power";
   }
 
   return nullptr;

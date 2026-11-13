@@ -44,6 +44,18 @@ describe("config page", () => {
     });
   });
 
+  it("sends the Wi-Fi transmit power only when it changes", async () => {
+    const { robot, user, click } = await openConfig({ wifi_tx_power: 8.5 });
+
+    expect(field("Transmit power").value).toBe("8.5");
+
+    await user.selectOptions(field("Transmit power"), "13");
+    await click("Save settings");
+
+    await waitFor(() => expect(statusText()).toBe("Settings saved."));
+    expect(robot.lastPost("/settings")?.json).toMatchObject({ wifi_tx_power: 13 });
+  });
+
   it("says when a hostname change needs a reboot", async () => {
     const { user, click } = await openConfig();
 

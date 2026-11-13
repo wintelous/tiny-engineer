@@ -113,6 +113,7 @@ void openSetupAp(wifi_mode_t mode) {
   WiFi.persistent(false);
   WiFi.mode(mode);
   WiFi.softAP(apSsid);
+  wifiApplyTxPower();
 
   if (!WiFi.AP.enableDhcpCaptivePortal()) {
     serialLogPrintln("ERROR: DHCP captive portal option failed");
@@ -153,6 +154,7 @@ bool connectSta(
   WiFi.setHostname(hostname);
   WiFi.enableIPv6(true);
   WiFi.begin(ssid, password);
+  wifiApplyTxPower();
 
   const unsigned long startMs = millis();
 
@@ -360,4 +362,21 @@ void runWifiSetup() {
 
   startProvisioningAp();
   delay(500);
+}
+
+void wifiApplyTxPower() {
+  if (WiFi.getMode() == WIFI_OFF) {
+    return;
+  }
+
+  const uint8_t qdbm = settingsWifiTxPowerQdbm();
+
+  if (!WiFi.setTxPower(static_cast<wifi_power_t>(qdbm))) {
+    serialLogPrintln("ERROR: WiFi TX power not applied");
+    return;
+  }
+
+  serialLogPrint("WiFi TX power: ");
+  serialLogPrint(qdbm / 4.0f);
+  serialLogPrintln(" dBm");
 }

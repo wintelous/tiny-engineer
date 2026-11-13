@@ -16,6 +16,16 @@ import { WifiNetworksSection } from "./WifiNetworksSection";
 
 const EYES_STYLES = ["classic", "kaomoji", "cover", "dots"];
 
+// Common steps of the radio's 2–20 dBm cap, strongest first. The saved value
+// joins the list when it is a step in between (any 0.5 dBm step is valid).
+const TX_POWER_LEVELS = [20, 19.5, 19, 18.5, 17, 15, 13, 11, 8.5, 7, 5, 2];
+
+function txPowerOptions(saved: number) {
+  return TX_POWER_LEVELS.includes(saved)
+    ? TX_POWER_LEVELS
+    : [...TX_POWER_LEVELS, saved].sort((a, b) => b - a);
+}
+
 // An emptied number field reads NaN; the stock volume stands in until the user types again.
 const clampVolume = (value: number) => (Number.isNaN(value) ? 70 : clamp(value, 0, 100));
 
@@ -29,6 +39,7 @@ function draftFrom(settings: Settings) {
     serialLog: settings.serial_log,
     loading: settings.loading,
     eyesStyle: settings.eyes_style,
+    wifiTxPower: settings.wifi_tx_power,
   };
 }
 
@@ -79,6 +90,10 @@ export function ConfigForm({ settings }: { settings: Settings }) {
           continuous_timeout: Number(draft.continuousTimeout),
           loading: draft.loading,
           eyes_style: draft.eyesStyle,
+          // Sent only on change: the robot re-applies it to the radio live.
+          ...(draft.wifiTxPower === settings.wifi_tx_power
+            ? {}
+            : { wifi_tx_power: draft.wifiTxPower }),
           ...(newToken === undefined ? {} : { access_token: newToken }),
         },
       },
@@ -117,6 +132,26 @@ export function ConfigForm({ settings }: { settings: Settings }) {
         />
       </ConfigSection>
       <WifiNetworksSection networks={networks} />
+      <ConfigSection title="Wi-Fi radio" apply="now">
+        <div className="form-group">
+          <label htmlFor="config-tx-power">Transmit power</label>
+          <select
+            id="config-tx-power"
+            value={draft.wifiTxPower}
+            onChange={(event) => set({ wifiTxPower: Number(event.currentTarget.value) })}
+          >
+            {txPowerOptions(settings.wifi_tx_power).map((dbm) => (
+              <option key={dbm} value={dbm}>
+                {dbm} dBm{dbm === 20 ? " (full)" : ""}
+              </option>
+            ))}
+          </select>
+          <p className="hint">
+            Lower it if the robot drops off Wi-Fi; raise it if pages load slowly or not at all. Some
+            boards (SuperMini) only stay connected at reduced power.
+          </p>
+        </div>
+      </ConfigSection>
       <ConfigSection title="Timeouts" apply="now">
         <div className="form-group">
           <label htmlFor="config-sleep">Sleep timeout (minutes)</label>
