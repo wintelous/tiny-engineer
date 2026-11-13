@@ -17,6 +17,8 @@ mods/<mod_name>/
 
 `parts/{servo_id}/` mirrors stock: `3mf/`, `stl/`, and `step/`. Example: [`halloween/`](halloween/).
 
+[`esp32-c3-supermini/`](esp32-c3-supermini/) is a hardware mod: desk parts for an ESP32-C3 SuperMini on discrete breakouts, built with `pio run -e supermini`.
+
 ## Audio
 
 Optional speaker replacements live in `mods/<mod_name>/assets/`. Format matches stock: **44100 Hz, mono, 16-bit PCM**; the build downsamples to 22050 Hz. Firmware still plays `/welcome.wav` and the other root names. The build overlay copies stock [`assets/`](../assets/) first, then overwrites any basename the mod ships. A missing file stays the stock clip.

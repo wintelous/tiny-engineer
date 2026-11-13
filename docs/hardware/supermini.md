@@ -14,7 +14,7 @@ pio test -e native-supermini
 
 `native-supermini` runs the settings checks with this build's pin rules. To flash, use the same targets as the stock build with `-e supermini` (`-t upload`, `-t uploadfs`).
 
-Flash over the SuperMini's own USB-C with the servo supply and the external 5 V disconnected: the external 5 V feeds the SuperMini's 5V pin, and two USB supplies must never be connected at once. The SuperMini's USB data lines (GPIO18/19) are not on its headers, so its own port is the programming port; the USB-C power breakout only brings in 5 V.
+Flash over the SuperMini's own USB-C with the servo supply and the external 5 V disconnected: the external 5 V feeds the SuperMini's 5V pin, so without a diode in that feed (see the mod's wiring) two supplies would fight. The SuperMini's USB data lines (GPIO18/19) are not on its headers, so its own port is the programming port; the USB-C power breakout only brings in 5 V.
 
 ## Wiring
 
