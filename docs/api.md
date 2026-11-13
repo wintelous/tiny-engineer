@@ -195,7 +195,7 @@ curl http://tiny-engineer.local/settings
 | `servo_maxs` | Per-joint safe maximum degrees (stock defaults **100, 100, 100, 100, 100**). Each max must be greater than the matching min |
 | `rgb_order` | Onboard WS2812 wire-byte order (`RGB`, `RBG`, `GRB`, `GBR`, `BRG`, `BGR`); on the SuperMini build, the colors on GP6, GP7 and GP10. Default **`GRB`** (SuperMini build **`RGB`**). Survives factory reset |
 | `oled_rotate_180` | OLED 180° rotation (`true` → `setRotation(2)`). Default **`false`** (SuperMini build **`true`**). Setup AP only. Survives factory reset |
-| `wifi_tx_power` | Wi-Fi transmit power cap in dBm (default **20**, the ESP32-C3 maximum; SuperMini build **8.5**). Applies **immediately** in station and setup AP mode. Lower it for boards whose antenna misbehaves at full power; raise it when large replies such as the web UI stall on a weak link. Reset to the default by factory reset |
+| `wifi_tx_power` | Wi-Fi transmit power cap in dBm (default **20**, the ESP32-C3 maximum; SuperMini build **8.5**). Applies **immediately** in station and setup AP mode. Lower it for boards whose antenna misbehaves at full power; raise it when large replies such as the web UI stall on a weak link. A change is on trial: if the Wi-Fi link drops within 30 s, the robot restores and saves the previous power. At boot, when no saved network connects at the saved power, the robot retries at the default and keeps it if that connects. Reset to the default by factory reset |
 | `reboot_required` | `true` once the saved `hostname`, `loading` or WiFi networks differ from what this boot started with; those apply only after a reboot |
 
 ### `POST /settings`
@@ -258,7 +258,7 @@ curl -X POST "http://192.168.4.1/settings" \
 | `servo_maxs` | integer array | Five integers `0`–`180`; setup AP only; each value must be greater than the matching min |
 | `rgb_order` | string | `RGB`, `RBG`, `GRB`, `GBR`, `BRG`, or `BGR`; setup AP only; default `GRB` (SuperMini build: `RGB`) |
 | `oled_rotate_180` | boolean | Setup AP only; default `false` (SuperMini build: `true`) |
-| `wifi_tx_power` | number | 2–20 dBm in 0.5 dBm steps; applies immediately; default `20` (SuperMini build: `8.5`) |
+| `wifi_tx_power` | number | 2–20 dBm in 0.5 dBm steps; applies immediately; reverts if Wi-Fi drops within 30 s; default `20` (SuperMini build: `8.5`) |
 
 Leave out a field to keep its saved value. An empty object → **400** `send at least one setting`. A field this route does not know → **400** `unknown field <field>`. A field with the wrong type or out of range → **400** `invalid <field>` (servo ranges that overlap or exceed 180: `invalid servo_mins or servo_maxs`). Only one of `servo_mins` / `servo_maxs` → **400** `servo_mins and servo_maxs go together`. Enabling extensions (or changing their pins) so two enabled extensions would share a GPIO → **400** `pin conflict on GP… (…)` and nothing is saved. Outside setup AP mode, servo ranges → **400** `servo setup only in AP mode`, `rgb_order` → **400** `rgb setup only in AP mode`, `oled_rotate_180` → **400** `oled setup only in AP mode`. On any 400, nothing is saved. Replies carry `reboot_required` as in `GET /settings`.
 

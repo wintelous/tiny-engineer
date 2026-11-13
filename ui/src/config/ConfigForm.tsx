@@ -148,7 +148,8 @@ export function ConfigForm({ settings }: { settings: Settings }) {
           </select>
           <p className="hint">
             Lower it if the robot drops off Wi-Fi; raise it if pages load slowly or not at all. Some
-            boards (SuperMini) only stay connected at reduced power.
+            boards (SuperMini) only stay connected at reduced power. If Wi-Fi drops within 30 s of a
+            change, the robot goes back to the previous power.
           </p>
         </div>
       </ConfigSection>

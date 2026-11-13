@@ -19,3 +19,6 @@ void wifiStopProvisioningAp();
 void wifiRestoreProvisioningAp();
 // Caps the radio at the saved wifi_tx_power. Applies live; no-op while WiFi is off.
 void wifiApplyTxPower();
+// Applies a just-saved power on trial: if the station link drops within 30 s,
+// `previousQdbm` is applied and saved again.
+void wifiTryTxPower(uint8_t previousQdbm);

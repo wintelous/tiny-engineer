@@ -33,6 +33,42 @@ char connectError[32] = "";
 bool staConnected = false;
 bool provisioning = false;
 
+// A live wifi_tx_power change is on trial: if the station link drops within
+// this window, the previous power comes back and is saved again. Boards whose
+// antenna fails at high power lose the link at once.
+constexpr unsigned long TX_POWER_TRIAL_MS = 30000;
+bool txTrial = false;
+unsigned long txTrialStartMs = 0;
+uint8_t txTrialPreviousQdbm = SETTINGS_DEFAULT_WIFI_TX_POWER_QDBM;
+
+bool saveTxPower(uint8_t qdbm) {
+  SettingsPatch patch;
+  patch.wifiTxPowerDbm = qdbm / 4.0f;
+  return saveSettings(patch);
+}
+
+void watchTxPowerTrial() {
+  if (!txTrial) {
+    return;
+  }
+
+  if (WiFi.status() == WL_CONNECTED) {
+    if (millis() - txTrialStartMs >= TX_POWER_TRIAL_MS) {
+      txTrial = false;
+    }
+    return;
+  }
+
+  txTrial = false;
+  serialLogPrintln("WiFi lost after a TX power change; restoring the previous power");
+
+  if (!saveTxPower(txTrialPreviousQdbm)) {
+    serialLogPrintln("ERROR: previous TX power not saved");
+  }
+
+  wifiApplyTxPower();
+}
+
 void setConnectError(const char* msg) {
   strncpy(connectError, msg, sizeof(connectError) - 1);
   connectError[sizeof(connectError) - 1] = '\0';
@@ -300,6 +336,8 @@ void pollWifi() {
   if (dnsStarted) {
     dnsServer.processNextRequest();
   }
+
+  watchTxPowerTrial();
 }
 
 void wifiStopProvisioningAp() {
@@ -355,6 +393,24 @@ void runWifiSetup() {
       return;
     }
 
+    // A saved power the antenna cannot work at would lock the robot out on
+    // every boot. Try the board default once and keep it if that connects.
+    if (settingsWifiTxPowerQdbm() != SETTINGS_DEFAULT_WIFI_TX_POWER_QDBM) {
+      const uint8_t saved = settingsWifiTxPowerQdbm();
+
+      serialLogPrintln("Saved WiFi failed; retrying at the default TX power");
+      saveTxPower(SETTINGS_DEFAULT_WIFI_TX_POWER_QDBM);
+
+      if (connectSavedNetworks()) {
+        provisioning = false;
+        delay(500);
+        return;
+      }
+
+      // The networks are down, not the radio: keep the user's power.
+      saveTxPower(saved);
+    }
+
     serialLogPrintln("Saved WiFi failed; opening setup AP");
   } else {
     serialLogPrintln("No WiFi credentials; opening setup AP");
@@ -362,6 +418,17 @@ void runWifiSetup() {
 
   startProvisioningAp();
   delay(500);
+}
+
+void wifiTryTxPower(uint8_t previousQdbm) {
+  wifiApplyTxPower();
+
+  if (!provisioning && WiFi.status() == WL_CONNECTED &&
+      settingsWifiTxPowerQdbm() != previousQdbm) {
+    txTrial = true;
+    txTrialStartMs = millis();
+    txTrialPreviousQdbm = previousQdbm;
+  }
 }
 
 void wifiApplyTxPower() {

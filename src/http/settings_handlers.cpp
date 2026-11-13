@@ -206,6 +206,8 @@ void handleSettingsPost(WebServer& server) {
     return;
   }
 
+  const uint8_t previousTxPower = settingsWifiTxPowerQdbm();
+
   // Compare before save — saveSettings updates the in-memory token.
   const bool tokenRotated = patch.accessToken != nullptr &&
                             patch.accessToken[0] != '\0' &&
@@ -236,7 +238,7 @@ void handleSettingsPost(WebServer& server) {
   }
 
   if (patch.wifiTxPowerDbm) {
-    wifiApplyTxPower();
+    wifiTryTxPower(previousTxPower);
   }
 
   const bool leaveUsbOnly =
