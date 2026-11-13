@@ -1,32 +1,66 @@
-import { useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
+import { sendQuietly, type Request } from "../api/client";
 import type { Settings } from "../api/types";
 import { Button } from "../components/Button";
 import { ConfigSection } from "../components/ConfigSection";
 import { useRobot } from "../robot";
-import { DEFAULT_SERVO_RANGES, SERVO_NAMES, savedRanges } from "../servos";
+import { SERVO_NAMES, type Range } from "../servos";
 import { useStatus } from "../status/status";
 
 const NUDGES = [-5, -1, 1, 5] as const;
 const ANGLE_MIN = 0;
 const ANGLE_MAX = 180;
 
+export const END_CALIBRATION: Request = { method: "POST", json: { end: true } };
+
 const clampAngle = (angle: number) => Math.min(ANGLE_MAX, Math.max(ANGLE_MIN, angle));
 
-// Recalibrate one joint outside setup mode. The robot pauses animations while a
-// session is open and closes it on save, on cancel, or after two quiet minutes.
-export function ServoCalibration() {
-  const { settings, applySettings } = useRobot();
+// Calibration of the joint picked on the Servo page. The robot holds a session
+// while this panel is open: animations pause and the joint may pass its saved
+// limits. Only Save range writes anything. Cancel, leaving the page or closing
+// the tab ends the session and the saved range stays in force.
+export function ServoCalibration({
+  index,
+  range: [savedMin, savedMax],
+  startAngle,
+  onClose,
+}: {
+  index: number;
+  range: Range;
+  startAngle: number;
+  // Called with the new range after a save, without one after a cancel.
+  onClose: (saved?: Range) => void;
+}) {
+  const { applySettings } = useRobot();
   const { perform } = useStatus();
-  const ranges = settings ? savedRanges(settings) : DEFAULT_SERVO_RANGES;
-  const [index, setIndex] = useState(0);
-  const [active, setActive] = useState(false);
-  const [angle, setAngle] = useState(0);
+  const [angle, setAngle] = useState(startAngle);
   const [draftMin, setDraftMin] = useState<number | null>(null);
   const [draftMax, setDraftMax] = useState<number | null>(null);
-  const [savedMin, savedMax] = ranges[index];
+  // False once Save or Cancel has closed the session on the robot.
+  const openRef = useRef(true);
   const newMin = draftMin ?? savedMin;
   const newMax = draftMax ?? savedMax;
   const rangeOk = newMin < newMax;
+  const changed = newMin !== savedMin || newMax !== savedMax;
+  const name = SERVO_NAMES[index];
+
+  // Leaving the page (another page of the UI, reload, closed tab) abandons the
+  // calibration: end the session so animations run on the saved range again.
+  useEffect(() => {
+    const abandon = () => {
+      if (openRef.current) {
+        openRef.current = false;
+        void sendQuietly("/servo/calibrate", { ...END_CALIBRATION, keepalive: true });
+      }
+    };
+
+    window.addEventListener("pagehide", abandon);
+
+    return () => {
+      window.removeEventListener("pagehide", abandon);
+      abandon();
+    };
+  }, []);
 
   async function moveTo(target: number) {
     const next = clampAngle(Math.round(target));
@@ -38,28 +72,22 @@ export function ServoCalibration() {
     });
 
     if (result?.ok) {
-      setActive(true);
       setAngle(next);
     }
-  }
-
-  function reset() {
-    setActive(false);
-    setDraftMin(null);
-    setDraftMax(null);
   }
 
   async function cancel() {
     const result = await perform({
       path: "/servo/calibrate",
-      request: { method: "POST", json: { end: true } },
-      pending: "Ending calibration…",
+      request: END_CALIBRATION,
+      pending: "Cancelling…",
       failure: "Cancel failed",
-      done: "Calibration cancelled; saved range kept.",
+      done: `Calibration cancelled; ${name} keeps ${savedMin}–${savedMax}°.`,
     });
 
     if (result?.ok) {
-      reset();
+      openRef.current = false;
+      onClose();
     }
   }
 
@@ -69,87 +97,66 @@ export function ServoCalibration() {
       request: { method: "PUT", json: { index, min: newMin, max: newMax } },
       pending: "Saving range…",
       failure: "Save failed",
-      done: `${SERVO_NAMES[index]} range saved: ${newMin}–${newMax}°.`,
+      done: `${name} range saved: ${newMin}–${newMax}°.`,
       onSuccess: (saved) => {
+        // Saving closes the session on the robot.
+        openRef.current = false;
         applySettings(saved);
-        reset();
+        onClose([newMin, newMax]);
       },
     });
   }
 
   return (
-    <ConfigSection title="Calibrate one joint" apply="now">
+    <ConfigSection title={`Calibrating ${index} — ${name}`}>
       <p className="config-section-desc">
-        Moves slowly and may go past the saved limits. Nudge in small steps and stop before a part
-        binds or a cable pulls taut. Animations pause until you save or cancel.
+        The joint moves slowly and can go past its saved limits: nudge in small steps and stop
+        before a part binds or a cable pulls taut.
       </p>
+      <p className="config-section-desc">
+        Nothing is saved until you press Save range. Cancel, or leaving this page, keeps the saved
+        range. Animations and agent hooks pause until then.
+      </p>
+
       <div className="form-group">
-        <label htmlFor="calib-index">Joint</label>
-        <select
-          id="calib-index"
-          value={index}
-          disabled={active}
-          onChange={(event) => {
-            setIndex(Number(event.currentTarget.value));
-            setDraftMin(null);
-            setDraftMax(null);
-          }}
-        >
-          {SERVO_NAMES.map((name, servo) => (
-            <option key={name} value={servo}>
-              {servo} — {name}
-            </option>
+        <div className="field-head">
+          <span>Current angle: {angle}°</span>
+        </div>
+        <div className="calib-nudges" role="group" aria-label="Nudge joint">
+          {NUDGES.map((step) => (
+            <Button
+              key={step}
+              aria-label={`Nudge ${step > 0 ? "+" : ""}${step}°`}
+              disabled={angle + step < ANGLE_MIN || angle + step > ANGLE_MAX}
+              onClick={() => void moveTo(angle + step)}
+            >
+              {step > 0 ? `+${step}` : step}°
+            </Button>
           ))}
-        </select>
-        <p className="hint">
-          Saved range: {savedMin}–{savedMax}°
-        </p>
+        </div>
+      </div>
+      <div className="servo-actions">
+        <Button onClick={() => setDraftMin(angle)}>Set as min</Button>
+        <Button onClick={() => setDraftMax(angle)}>Set as max</Button>
+        <Button onClick={() => void moveTo(newMin)}>Go to min</Button>
+        <Button onClick={() => void moveTo(newMax)}>Go to max</Button>
       </div>
 
-      {active ? (
-        <>
-          <div className="form-group">
-            <div className="field-head">
-              <span>Current angle: {angle}°</span>
-            </div>
-            <div className="calib-nudges" role="group" aria-label="Nudge joint">
-              {NUDGES.map((step) => (
-                <Button
-                  key={step}
-                  aria-label={`Nudge ${step > 0 ? "+" : ""}${step}°`}
-                  disabled={angle + step < ANGLE_MIN || angle + step > ANGLE_MAX}
-                  onClick={() => void moveTo(angle + step)}
-                >
-                  {step > 0 ? `+${step}` : step}°
-                </Button>
-              ))}
-            </div>
-          </div>
-          <div className="servo-actions">
-            <Button onClick={() => setDraftMin(angle)}>Set as min</Button>
-            <Button onClick={() => setDraftMax(angle)}>Set as max</Button>
-            <Button onClick={() => void moveTo(newMin)}>Go to min</Button>
-            <Button onClick={() => void moveTo(newMax)}>Go to max</Button>
-          </div>
-          <p className={rangeOk ? "hint" : "hint warn"}>
-            {rangeOk
-              ? `New range: ${newMin}–${newMax}°`
-              : `Min (${newMin}°) must be below max (${newMax}°)`}
-          </p>
-          <div className="servo-actions">
-            <Button onClick={() => void cancel()}>Cancel</Button>
-            <Button variant="primary" disabled={!rangeOk} onClick={() => void save()}>
-              Save range
-            </Button>
-          </div>
-        </>
-      ) : (
-        <div className="servo-actions">
-          <Button variant="primary" onClick={() => void moveTo((savedMin + savedMax) / 2)}>
-            Start calibration
-          </Button>
-        </div>
-      )}
+      <p className="hint">
+        Saved range: {savedMin}–{savedMax}°
+      </p>
+      <p className={rangeOk ? "hint" : "hint warn"}>
+        {rangeOk
+          ? `New range: ${newMin}–${newMax}°${changed ? "" : " (unchanged)"}`
+          : `Min (${newMin}°) must be below max (${newMax}°)`}
+      </p>
+
+      <div className="servo-actions">
+        <Button onClick={() => void cancel()}>Cancel</Button>
+        <Button variant="primary" disabled={!rangeOk || !changed} onClick={() => void save()}>
+          Save range
+        </Button>
+      </div>
     </ConfigSection>
   );
 }

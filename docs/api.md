@@ -456,7 +456,7 @@ After STA is up, use `POST /test/servo` (clamped to saved min/max), or [`POST /s
 
 Recalibrate one joint without setup AP mode. Slowly move one servo using the full **0–180°** electrical range (no saved safe-range clamp), at ~25°/s (`SERVO_CALIB_SPEED_DEG_S`), like [`POST /setup/servo`](#post-setupservo). Handler blocks until the move finishes. Requires a provisioned robot and Bearer when auth is enabled.
 
-The first move opens a **calibration session**: the robot switches to the `none` pose, then refuses every animation (including `POST /anim`, Actions and the sleep timer) and keeps servo PWM on, so only calibration moves the joints. Each move refreshes the session. It closes on `{"end": true}`, on [`PUT /settings/servo`](#put-settingsservo), or after **2 minutes** without a move; an explicit close returns to the `none` pose inside the saved ranges.
+The first move opens a **calibration session**: the robot switches to the `none` pose, then refuses every animation (including `POST /anim`, Actions and the sleep timer) and keeps servo PWM on, so only calibration moves the joints. Each move refreshes the session. It closes on `{"end": true}`, on [`PUT /settings/servo`](#put-settingsservo), or after **2 minutes** without a move; an explicit close returns to the `none` pose inside the saved ranges. The web UI's Servo page sends `{"end": true}` when it opens and whenever you cancel, leave the page or close the tab, so an abandoned calibration never keeps animations paused.
 
 JSON body: either `index` + `angle`, or `{"end": true}`.
 
