@@ -50,3 +50,17 @@ The web UI is built with `VITE_TE_BOARD=supermini` (PlatformIO option `custom_ui
 ## First boot
 
 With only the SuperMini connected, boot stops at `PCA9685 not found` (one red blink once the LED is fitted). Connect the logic modules with the power off before expecting the setup access point, and keep the servo supply off, horns and linkages free, until the servos are centred and calibrated.
+
+## Bench tests
+
+Separate applications for checking the wiring one part at a time. Each builds at the normal app offset (0x10000) and leaves NVS and LittleFS alone: flash only its `firmware.bin`, then flash the robot application back. Serial output is at 115200 baud.
+
+| Environment | What it does | Host check |
+| --- | --- | --- |
+| `supermini-rgb-test` | Cycles red, green, blue, white and off on GPIO6/7/10, two seconds each. No I2C modules needed; GPIO5 stays HIGH so the servos stay off | `python3 scripts/test_supermini_rgb.py` (robot RGB driver) |
+| `supermini-audio-test` | Three rounds of 100 ms 500/1000 Hz full-scale beeps, then digital silence | `python3 scripts/test_audio_test.py` |
+| `supermini-hardware-test` | Scans I2C, reads PCA9685 MODE1/MODE2 without starting PWM, shows OLED faces rotated 180°, cycles the RGB LED. Keep the servos disconnected | `python3 scripts/test_hardware_registers.py` |
+| `supermini-servo-test` | Serial commands for one SG90 at a time: `C0`…`C4` 1500 µs, `-0`…`-4` 1450 µs, `+0`…`+4` 1550 µs, `OFF`, `STATUS`. Outputs off at start and again two seconds after each command | `python3 scripts/test_servo_test.py` |
+| `supermini-servo-wifi-test` | The same over Wi-Fi, with the IP on the OLED: [servo-wifi-test.md](servo-wifi-test.md) | `python3 scripts/test_servo_wifi.py` |
+
+`python3 scripts/test_speaker_output.py` checks the robot's speaker writer at the 44.1 kHz clock: pitch, duration, volume applied once, stereo and silence.
