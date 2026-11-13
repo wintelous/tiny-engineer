@@ -7,7 +7,9 @@ import { useRobot } from "../robot";
 import { useStatus } from "../status/status";
 import { useResettableState } from "../useResettableState";
 
-const PUSH_BUTTON_PINS = [6, 7, 20, 21] as const;
+// GP9 is the ESP32 module's BOOT button; the others are Extension-port pins.
+const PUSH_BUTTON_PINS = [6, 7, 9, 20, 21] as const;
+const BOOT_BUTTON_PIN = 9;
 
 const BUTTON_EVENT_ROWS = [
   { key: "down", api: "button.down", when: "Press" },
@@ -112,10 +114,17 @@ function ExtensionsForm({
                     );
                   })}
                 </div>
-                <p className="hint">
-                  Wire a momentary switch between GP{draft.pushButtonPin} and GND on the Extension
-                  port. Active-low with the ESP32 internal pull-up.
-                </p>
+                {draft.pushButtonPin === BOOT_BUTTON_PIN ? (
+                  <p className="hint">
+                    GP9 is the ESP32 module&apos;s BOOT button, so no wiring is needed. Do not hold
+                    it while powering on or resetting: the board then starts in download mode.
+                  </p>
+                ) : (
+                  <p className="hint">
+                    Wire a momentary switch between GP{draft.pushButtonPin} and GND on the Extension
+                    port. Active-low with the ESP32 internal pull-up.
+                  </p>
+                )}
                 <div className="field-head">
                   <span>Events</span>
                 </div>

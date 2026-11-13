@@ -48,7 +48,7 @@ void test_push_button_pin() {
   TEST_ASSERT_TRUE(settingsValidatePushButtonPin(20));
   TEST_ASSERT_TRUE(settingsValidatePushButtonPin(21));
   TEST_ASSERT_FALSE(settingsValidatePushButtonPin(8));
-  TEST_ASSERT_FALSE(settingsValidatePushButtonPin(9));
+  TEST_ASSERT_TRUE(settingsValidatePushButtonPin(9));
   TEST_ASSERT_FALSE(settingsValidatePushButtonPin(0));
   TEST_ASSERT_FALSE(settingsValidatePushButtonPin(19));
 }
