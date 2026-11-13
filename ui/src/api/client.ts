@@ -30,6 +30,8 @@ export interface Request {
   params?: Record<string, string>;
   json?: unknown;
   signal?: AbortSignal;
+  // Lets the request finish after the page unloads (closing calibration on leave).
+  keepalive?: boolean;
 }
 
 // Every firmware reply carries `ok`; errors are {"ok":false,"error":...}.
@@ -38,7 +40,10 @@ export interface Reply {
 }
 export type ApiResult<T extends Reply> = { ok: true; data: T } | { ok: false; data: ApiError };
 
-export function apiFetch(path: string, { method = "GET", params, json, signal }: Request = {}) {
+export function apiFetch(
+  path: string,
+  { method = "GET", params, json, signal, keepalive }: Request = {},
+) {
   const query = params ? `?${new URLSearchParams(params)}` : "";
   const headers: Record<string, string> = {};
   const stored = token.get();
@@ -56,6 +61,7 @@ export function apiFetch(path: string, { method = "GET", params, json, signal }:
     headers,
     body: json === undefined ? undefined : JSON.stringify(json),
     signal,
+    keepalive,
   });
 }
 
