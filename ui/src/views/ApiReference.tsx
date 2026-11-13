@@ -216,7 +216,8 @@ export function ApiReference() {
             </td>
             <td>number</td>
             <td>
-              2&ndash;20 dBm in 0.5 dBm steps; applies immediately; default <code>20</code>
+              2&ndash;20 dBm in 0.5 dBm steps; applies immediately; reverts if Wi-Fi drops within 30
+              s; default <code>20</code>
             </td>
           </tr>
         </tbody>
