@@ -2,6 +2,7 @@ import clsx from "clsx";
 import { useEffect, useState } from "preact/hooks";
 import { Button } from "../components/Button";
 import { ConfigSection } from "../components/ConfigSection";
+import { IS_SUPERMINI } from "../lib/board";
 import { useStatus } from "../status/status";
 import { type LedMapping, releaseLed } from "./useLedMapping";
 
@@ -10,7 +11,10 @@ const CHANNELS = [
   ["G", "Green"],
   ["B", "Blue"],
 ] as const;
-const BYTE_LABELS = ["First byte", "Second byte", "Third byte"];
+// SuperMini build: one PWM pin per color instead of WS2812 wire bytes.
+const BYTE_LABELS = IS_SUPERMINI
+  ? ["GPIO6 output", "GPIO7 output", "GPIO10 output"]
+  : ["First byte", "Second byte", "Third byte"];
 
 export function LedStep({ mapping }: { mapping: LedMapping }) {
   const { perform } = useStatus();

@@ -113,6 +113,10 @@ void openSetupAp(wifi_mode_t mode) {
   WiFi.persistent(false);
   WiFi.mode(mode);
   WiFi.softAP(apSsid);
+#if defined(TE_BOARD_SUPERMINI)
+  // The SuperMini's antenna is unreliable at full power; 8.5 dBm is the board-tested setting.
+  WiFi.setTxPower(WIFI_POWER_8_5dBm);
+#endif
 
   if (!WiFi.AP.enableDhcpCaptivePortal()) {
     serialLogPrintln("ERROR: DHCP captive portal option failed");
@@ -153,6 +157,9 @@ bool connectSta(
   WiFi.setHostname(hostname);
   WiFi.enableIPv6(true);
   WiFi.begin(ssid, password);
+#if defined(TE_BOARD_SUPERMINI)
+  WiFi.setTxPower(WIFI_POWER_8_5dBm);
+#endif
 
   const unsigned long startMs = millis();
 

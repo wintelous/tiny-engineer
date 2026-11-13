@@ -178,11 +178,11 @@ curl http://tiny-engineer.local/settings
 | --- | --- |
 | `sleep_timeout` | Minutes of continuous animation `none` before OLED blanks (default **10**). Any non-idle animation keeps the device awake and restarts the idle clock when returning to `none`. Other APIs do not affect the timer. |
 | `hostname` | DHCP/mDNS label without `.local` (default **`tiny-engineer`**) |
-| `volume` | Speaker gain percent for tones and WAV playback (default **70**) |
+| `volume` | Speaker gain percent for tones and WAV playback (default **70**; SuperMini build **100**) |
 | `welcome` | Play welcome animation on boot when Wi-Fi connects (default **true**). Also enables head/neck motion during `sleep_inertia` loading |
 | `serial_log` | USB serial debug logging (default **false**). When off, diagnostic `Serial` output is suppressed |
 | `push_button` | Extension-port push-button reader (default **false**). When on, publishes immediate `button.down` / `button.up` plus `button.click` / `button.double_click` / `button.long_click` (see [Outbound events](#outbound-events)). Applies **immediately**. Local reactions use [Actions](#get-settingsactions) |
-| `push_button_pin` | GPIO for the push-button: **6**, **7**, **20**, or **21** on the Extension port, or **9** (the ESP32 module's BOOT button; do not hold it at power-on or reset, or the board starts in download mode) (default **20**). Persists when `push_button` is off. Applies **immediately** when the extension is on |
+| `push_button_pin` | GPIO for the push-button: **6**, **7**, **20**, or **21** on the Extension port, or **9** (the ESP32 module's BOOT button; do not hold it at power-on or reset, or the board starts in download mode) (default **20**). The [SuperMini build](hardware/supermini.md) leaves out **6** and **7**, which drive its RGB LED. Persists when `push_button` is off. Applies **immediately** when the extension is on |
 | `continuous_timeout` | Minutes a continuous animation (`typing` / `reading` / `thinking` / `talking`) may run before the firmware switches to `attention` then idle (default **5**) |
 | `loading` | Boot loading screen: `progress` (bar + large IP for 3 s) or `sleep_inertia` (eyes wake; no bar/IP). Default **`progress`**. Applies on **next reboot** |
 | `eyes_style` | OLED eyes look: `classic` (procedural rounded eyes), `kaomoji` (animated faces), `cover` (full-half bars for an eye-hole mask), or `dots` (12×12 circles). Default **`classic`**. Applies **immediately**. Classic, cover, and dots sequences are described under [`POST /anim`](#post-anim); kaomoji face mapping is under [Kaomoji eyes](#kaomoji-eyes); cover drawing is under [Cover eyes](#cover-eyes); dots drawing is under [Dots eyes](#dots-eyes) |
@@ -192,8 +192,8 @@ curl http://tiny-engineer.local/settings
 | `wifi_networks` | Saved network names (up to 5), in saved order. Passwords are never returned. At boot the robot scans and tries the visible saved networks strongest first, then the rest in this order (hidden SSIDs do not show in a scan). Change the list with [`PUT /settings/wifi`](#put-settingswifi) |
 | `servo_mins` | Per-joint safe minimum degrees `[head, neck, left, right, body]` (stock defaults **80, 80, 80, 80, 80**) |
 | `servo_maxs` | Per-joint safe maximum degrees (stock defaults **100, 100, 100, 100, 100**). Each max must be greater than the matching min |
-| `rgb_order` | Onboard WS2812 wire-byte order (`RGB`, `RBG`, `GRB`, `GBR`, `BRG`, `BGR`). Default **`GRB`**. Survives factory reset |
-| `oled_rotate_180` | OLED 180° rotation (`true` → `setRotation(2)`). Default **`false`**. Setup AP only. Survives factory reset |
+| `rgb_order` | Onboard WS2812 wire-byte order (`RGB`, `RBG`, `GRB`, `GBR`, `BRG`, `BGR`); on the SuperMini build, the colors on GP6, GP7 and GP10. Default **`GRB`** (SuperMini build **`RGB`**). Survives factory reset |
+| `oled_rotate_180` | OLED 180° rotation (`true` → `setRotation(2)`). Default **`false`** (SuperMini build **`true`**). Setup AP only. Survives factory reset |
 | `reboot_required` | `true` once the saved `hostname`, `loading` or WiFi networks differ from what this boot started with; those apply only after a reboot |
 
 ### `POST /settings`
@@ -245,7 +245,7 @@ curl -X POST "http://192.168.4.1/settings" \
 | `welcome` | boolean | Boot welcome animation |
 | `serial_log` | boolean | USB serial debug logging |
 | `push_button` | boolean | Extension-port push-button (default **false**) |
-| `push_button_pin` | integer | Extension-port GPIO **6**, **7**, **20**, or **21**, or **9** (BOOT button) (default **20**); persists when off |
+| `push_button_pin` | integer | Extension-port GPIO **6**, **7**, **20**, or **21**, or **9** (BOOT button) (default **20**); persists when off; SuperMini build: **9**, **20**, or **21** |
 | `continuous_timeout` | integer | 1–1440 minutes (positive) |
 | `loading` | string | `progress` or `sleep_inertia` |
 | `eyes_style` | string | `classic`, `kaomoji`, `cover`, or `dots` |
@@ -253,8 +253,8 @@ curl -X POST "http://192.168.4.1/settings" \
 | `link_mode` | string | `wifi` or `usb`; setup Connection step uses `usb` for USB-only; Wi-Fi mode is usually set when saving networks via [`PUT /settings/wifi`](#put-settingswifi) |
 | `servo_mins` | integer array | Five integers `0`–`180` (`head, neck, left, right, body`); setup AP only; must be sent with `servo_maxs` |
 | `servo_maxs` | integer array | Five integers `0`–`180`; setup AP only; each value must be greater than the matching min |
-| `rgb_order` | string | `RGB`, `RBG`, `GRB`, `GBR`, `BRG`, or `BGR`; setup AP only; default `GRB` |
-| `oled_rotate_180` | boolean | Setup AP only; default `false` |
+| `rgb_order` | string | `RGB`, `RBG`, `GRB`, `GBR`, `BRG`, or `BGR`; setup AP only; default `GRB` (SuperMini build: `RGB`) |
+| `oled_rotate_180` | boolean | Setup AP only; default `false` (SuperMini build: `true`) |
 
 Leave out a field to keep its saved value. An empty object → **400** `send at least one setting`. A field this route does not know → **400** `unknown field <field>`. A field with the wrong type or out of range → **400** `invalid <field>` (servo ranges that overlap or exceed 180: `invalid servo_mins or servo_maxs`). Only one of `servo_mins` / `servo_maxs` → **400** `servo_mins and servo_maxs go together`. Enabling extensions (or changing their pins) so two enabled extensions would share a GPIO → **400** `pin conflict on GP… (…)` and nothing is saved. Outside setup AP mode, servo ranges → **400** `servo setup only in AP mode`, `rgb_order` → **400** `rgb setup only in AP mode`, `oled_rotate_180` → **400** `oled setup only in AP mode`. On any 400, nothing is saved. Replies carry `reboot_required` as in `GET /settings`.
 
@@ -409,7 +409,7 @@ curl -X POST http://tiny-engineer.local/test/movement
 
 ### `POST /test/led`
 
-Onboard WS2812 on GPIO10: R → G → B → white → off (`runRgbTest()`), then fades back to the current animation color (see [RGB LED](#rgb-led)).
+Onboard WS2812 on GPIO10 (SuperMini build: the RGB LED on GP6/GP7/GP10): R → G → B → white → off (`runRgbTest()`), then fades back to the current animation color (see [RGB LED](#rgb-led)).
 
 ```bash
 curl -X POST http://tiny-engineer.local/test/led
@@ -496,7 +496,7 @@ curl -X PUT "http://tiny-engineer.local/settings/servo" -H "Content-Type: applic
 
 Setup AP only. Holds the LED so provisioning dim-blue does not clobber the preview. Does **not** require Wi-Fi credentials. Outside provisioning → **400** `setup only in AP mode`.
 
-Logical **color** (`R` / `G` / `B`) lights firmware red/green/blue using the saved `rgb_order`, or the `rgb_order` field if sent (wizard remap preview). Wire **byte** lights that WS2812 channel order-independent (`LED_COLOR_ORDER_RGB`, that channel 255). An empty body (neither `color` nor `byte`) releases the hold and restores dim blue. Do not send `color` and `byte` together.
+Logical **color** (`R` / `G` / `B`) lights firmware red/green/blue using the saved `rgb_order`, or the `rgb_order` field if sent (wizard remap preview). Wire **byte** lights that WS2812 channel order-independent (`LED_COLOR_ORDER_RGB`, that channel 255); on the SuperMini build, byte 0, 1 or 2 lights GP6, GP7 or GP10. An empty body (neither `color` nor `byte`) releases the hold and restores dim blue. Do not send `color` and `byte` together.
 
 | Field | Type | Range |
 | --- | --- | --- |
@@ -766,7 +766,7 @@ One request at a time — the Arduino `WebServer` is single-threaded. While `/pl
 
 ## RGB LED
 
-Onboard WS2812 on **GPIO10** (`RGB_LED_PIN`). Byte order is the saved `rgb_order` setting (default **GRB**). Animation-driven colors are handled in [`src/hardware/rgb.cpp`](../src/hardware/rgb.cpp) and switch when `POST /anim` applies a new state (same 1s minimum hold as servos/eyes).
+Onboard WS2812 on **GPIO10** (`RGB_LED_PIN`). Byte order is the saved `rgb_order` setting (default **GRB**). The [SuperMini build](hardware/supermini.md) drives a common-cathode LED instead: red, green and blue on GP6, GP7 and GP10 (`RGB_RED_PIN`, `RGB_GREEN_PIN`, `RGB_BLUE_PIN`), 8-bit PWM, `rgb_order` default **RGB**. Animation-driven colors are handled in [`src/hardware/rgb.cpp`](../src/hardware/rgb.cpp) and switch when `POST /anim` applies a new state (same 1s minimum hold as servos/eyes).
 
 | Animation | LED color |
 | --- | --- |

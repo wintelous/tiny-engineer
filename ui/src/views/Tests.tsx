@@ -1,4 +1,5 @@
 import { Button } from "../components/Button";
+import { IS_SUPERMINI } from "../lib/board";
 import { useStatus } from "../status/status";
 
 const TESTS = [
@@ -6,7 +7,11 @@ const TESTS = [
   ["/test/audio/bell", "Play the bell WAV file from storage.", "Bell sound"],
   ["/test/screen", "Draw a demo pattern on the OLED screen.", "OLED screen"],
   ["/test/movement", "Exercise all five servos through a sweep.", "All servos"],
-  ["/test/led", "Cycle the onboard RGB LED through colors.", "RGB LED"],
+  [
+    "/test/led",
+    `Cycle the ${IS_SUPERMINI ? "external" : "onboard"} RGB LED through colors.`,
+    "RGB LED",
+  ],
 ] as const;
 
 export function Tests() {

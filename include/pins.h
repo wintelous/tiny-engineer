@@ -18,8 +18,16 @@ constexpr int I2S_DIN  = 4;  // GP4
 // Default Extension-port GPIO for the push-button extension (settings `push_button_pin`).
 constexpr int PUSH_BUTTON_PIN_DEFAULT = 20;  // GP20
 
+#if defined(TE_BOARD_SUPERMINI)
+// ESP32-C3 SuperMini build (env:supermini): no onboard WS2812, so an external
+// common-cathode RGB LED, each anode through its own 330-ohm resistor.
+constexpr int RGB_RED_PIN = 6;    // GP6
+constexpr int RGB_GREEN_PIN = 7;  // GP7
+constexpr int RGB_BLUE_PIN = 10;  // GP10
+#else
 // Built-in WS2812 RGB
 constexpr int RGB_LED_PIN = 10;
+#endif
 
 // PCA9685 output enable (active LOW). GP5 → OE; default on.
 // Set PCA9685_OE_WIRED false only if OE is hard-tied off-chip (e.g. to GND).
@@ -32,6 +40,17 @@ constexpr int PCA9685_OE_PIN = 5;
 
 // assets/ ships 44100 Hz WAVs; scripts/audio_pack.py halves them while packing LittleFS.
 constexpr int SAMPLE_RATE = 22050;
+
+#if defined(TE_BOARD_SUPERMINI)
+// 22.05 kHz is not among the MAX98357A's supported clocks; the SuperMini build
+// runs I2S at 44.1 kHz and sends each PCM frame twice.
+constexpr int I2S_FRAME_REPEAT = 2;
+// Long jumper wires to the OLED: keep its I2C at 100 kHz, also during frames.
+constexpr uint32_t OLED_I2C_CLOCK_HZ = 100000;
+#else
+constexpr int I2S_FRAME_REPEAT = 1;
+#endif
+constexpr int I2S_SAMPLE_RATE = SAMPLE_RATE * I2S_FRAME_REPEAT;
 
 // =====================================================
 // PCA9685 / SERVOS

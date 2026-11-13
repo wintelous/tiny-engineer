@@ -43,8 +43,14 @@ void test_volume() {
 }
 
 void test_push_button_pin() {
+#if defined(TE_BOARD_SUPERMINI)
+  // GP6/GP7 drive the SuperMini build's RGB LED.
+  TEST_ASSERT_FALSE(settingsValidatePushButtonPin(6));
+  TEST_ASSERT_FALSE(settingsValidatePushButtonPin(7));
+#else
   TEST_ASSERT_TRUE(settingsValidatePushButtonPin(6));
   TEST_ASSERT_TRUE(settingsValidatePushButtonPin(7));
+#endif
   TEST_ASSERT_TRUE(settingsValidatePushButtonPin(20));
   TEST_ASSERT_TRUE(settingsValidatePushButtonPin(21));
   TEST_ASSERT_FALSE(settingsValidatePushButtonPin(8));

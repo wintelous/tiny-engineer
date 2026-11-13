@@ -28,6 +28,11 @@ void initOled() {
   if (!display.begin(
         SSD1306_SWITCHCAPVCC,
         OLED_ADDRESS
+#if defined(TE_BOARD_SUPERMINI)
+        ,
+        true,
+        false  // setup() already started Wire; leave its clock alone
+#endif
       )) {
     serialLogPrintln("ERROR: OLED initialization failed");
     oledAvailable = false;

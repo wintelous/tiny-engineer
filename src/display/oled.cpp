@@ -15,6 +15,11 @@ Adafruit_SSD1306 display(
   OLED_HEIGHT,
   &Wire,
   -1
+#if defined(TE_BOARD_SUPERMINI)
+  ,
+  OLED_I2C_CLOCK_HZ,
+  OLED_I2C_CLOCK_HZ
+#endif
 );
 
 bool oledAvailable = false;

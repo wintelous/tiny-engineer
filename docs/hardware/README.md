@@ -113,6 +113,7 @@ Prefer a **5 V / ≥2 A** source with margin. Details: [power.md](power.md).
 | [components.md](components.md) | Inventory, voltages, limits |
 | [pinout.md](pinout.md) | GPIO map + allocation rules |
 | [wiring.md](wiring.md) | Advanced: breakout harness |
+| [supermini.md](supermini.md) | Variant: ESP32-C3 SuperMini on breakouts (`pio run -e supermini`) |
 | [../3d/assembly-modular.md](../3d/assembly-modular.md) | Advanced: mount breakouts in the desk |
 | [power.md](power.md) | Budget, brownout symptoms, single-USB policy |
 | [servos.md](servos.md) | PWM, test limits, safe ranges |

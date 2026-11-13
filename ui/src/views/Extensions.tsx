@@ -3,12 +3,14 @@ import { Link } from "wouter-preact";
 import type { Settings } from "../api/types";
 import { Button } from "../components/Button";
 import { ConfigSection } from "../components/ConfigSection";
+import { IS_SUPERMINI } from "../lib/board";
 import { useRobot } from "../robot";
 import { useStatus } from "../status/status";
 import { useResettableState } from "../useResettableState";
 
 // GP9 is the ESP32 module's BOOT button; the others are Extension-port pins.
-const PUSH_BUTTON_PINS = [6, 7, 9, 20, 21] as const;
+// The SuperMini build drives its RGB LED from GP6/GP7, so they are not offered there.
+const PUSH_BUTTON_PINS: readonly number[] = IS_SUPERMINI ? [9, 20, 21] : [6, 7, 9, 20, 21];
 const BOOT_BUTTON_PIN = 9;
 
 const BUTTON_EVENT_ROWS = [

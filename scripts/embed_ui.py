@@ -1,6 +1,7 @@
 Import("env")
 
 import gzip
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -9,13 +10,15 @@ project_dir = Path(env.subst("$PROJECT_DIR"))
 ui_dir = project_dir / "ui"
 generated_dir = Path(env.subst("$BUILD_DIR")) / "generated"
 header = generated_dir / "web_ui.h"
+# Board variant for the UI (ui/src/lib/board.ts); empty for the stock builds.
+board = env.GetProjectOption("custom_ui_board", "")
 
 
 def npm(*args):
     executable = shutil.which("npm")
     if executable is None:
         raise RuntimeError("npm not found; building the web UI needs Node 20.19+ on 20.x, or 22.12+")
-    subprocess.run([executable, *args], cwd=ui_dir, check=True)
+    subprocess.run([executable, *args], cwd=ui_dir, check=True, env={**os.environ, "VITE_TE_BOARD": board})
 
 
 def newest_source_mtime():

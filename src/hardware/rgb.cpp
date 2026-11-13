@@ -1,5 +1,7 @@
 #include <Arduino.h>
+#if !defined(TE_BOARD_SUPERMINI)
 #include "esp32-hal-rgb-led.h"
+#endif
 
 #include "animation.h"
 #include "network/wifi_connect.h"
@@ -61,6 +63,17 @@ bool sameColor(uint8_t r1, uint8_t g1, uint8_t b1, uint8_t r2, uint8_t g2, uint8
   return r1 == r2 && g1 == g2 && b1 == b2;
 }
 
+#if defined(TE_BOARD_SUPERMINI)
+// SuperMini build: discrete common-cathode LED, one 8-bit PWM pin per color.
+// `order` names the color on GP6, GP7 and GP10, like the WS2812 wire byte order.
+void writeRgbPins(uint8_t r, uint8_t g, uint8_t b, const char* order) {
+  const int pins[] = {RGB_RED_PIN, RGB_GREEN_PIN, RGB_BLUE_PIN};
+  for (int i = 0; i < 3; i++) {
+    const uint8_t level = order[i] == 'R' ? r : order[i] == 'G' ? g : b;
+    analogWrite(pins[i], level);
+  }
+}
+#else
 rgb_led_color_order_t ledColorOrderFromName(const char* order) {
   if (order == nullptr) {
     return LED_COLOR_ORDER_GRB;
@@ -96,9 +109,14 @@ rgb_led_color_order_t ledColorOrderFromName(const char* order) {
 rgb_led_color_order_t ledColorOrderFromSettings() {
   return ledColorOrderFromName(settingsRgbOrder());
 }
+#endif
 
 void writeRgb(uint8_t r, uint8_t g, uint8_t b) {
+#if defined(TE_BOARD_SUPERMINI)
+  writeRgbPins(r, g, b, settingsRgbOrder());
+#else
   rgbLedWriteOrdered(RGB_LED_PIN, ledColorOrderFromSettings(), r, g, b);
+#endif
   g_currentR = r;
   g_currentG = g;
   g_currentB = b;
@@ -233,7 +251,11 @@ void rgbSetupHoldWireByte(uint8_t byteIndex) {
   const uint8_t r = byteIndex == 0 ? 255 : 0;
   const uint8_t g = byteIndex == 1 ? 255 : 0;
   const uint8_t b = byteIndex == 2 ? 255 : 0;
+#if defined(TE_BOARD_SUPERMINI)
+  writeRgbPins(r, g, b, "RGB");
+#else
   rgbLedWriteOrdered(RGB_LED_PIN, LED_COLOR_ORDER_RGB, r, g, b);
+#endif
 }
 
 void rgbSetupHoldLogical(uint8_t r, uint8_t g, uint8_t b, const char* order) {
@@ -245,7 +267,11 @@ void rgbSetupHoldLogical(uint8_t r, uint8_t g, uint8_t b, const char* order) {
     use = order;
   }
 
+#if defined(TE_BOARD_SUPERMINI)
+  writeRgbPins(r, g, b, use);
+#else
   rgbLedWriteOrdered(RGB_LED_PIN, ledColorOrderFromName(use), r, g, b);
+#endif
 }
 
 void rgbSetupRelease() {

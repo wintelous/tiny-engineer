@@ -131,6 +131,12 @@ bool ServoRanges::valid() const {
 
 // GPIO9 is the module's BOOT button (active-low, usable once the app runs).
 bool settingsValidatePushButtonPin(uint8_t pin) {
+#if defined(TE_BOARD_SUPERMINI)
+  // GP6/GP7 drive the SuperMini build's RGB LED.
+  if (pin == 6 || pin == 7) {
+    return false;
+  }
+#endif
   return pin == 6 || pin == 7 || pin == 9 || pin == 20 || pin == 21;
 }
 

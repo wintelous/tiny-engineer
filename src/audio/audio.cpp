@@ -103,7 +103,9 @@ bool initAudioStorage() {
 void writeMonoToSpeaker(const int16_t* samples, size_t count, uint8_t volume) {
   constexpr size_t FRAMES = 256;
 
-  int16_t buffer[FRAMES * 2];
+  constexpr size_t SLOTS = 2 * I2S_FRAME_REPEAT;  // stereo, each frame I2S_FRAME_REPEAT times
+
+  int16_t buffer[FRAMES * SLOTS];
 
   while (count > 0) {
     const size_t framesThisTime = count < FRAMES ? count : FRAMES;
@@ -117,13 +119,14 @@ void writeMonoToSpeaker(const int16_t* samples, size_t count, uint8_t volume) {
         scaled = -32768;
       }
 
-      buffer[i * 2] = static_cast<int16_t>(scaled);
-      buffer[i * 2 + 1] = static_cast<int16_t>(scaled);
+      for (size_t slot = 0; slot < SLOTS; slot++) {
+        buffer[i * SLOTS + slot] = static_cast<int16_t>(scaled);
+      }
     }
 
     I2S.write(
       reinterpret_cast<uint8_t*>(buffer),
-      framesThisTime * 2 * sizeof(int16_t)
+      framesThisTime * SLOTS * sizeof(int16_t)
     );
 
     samples += framesThisTime;
@@ -141,15 +144,15 @@ void playTone(
 ) {
   constexpr int FRAMES = 512;
 
-  int16_t buffer[FRAMES * 2];
+  int16_t buffer[FRAMES];
 
   float phase = 0.0f;
 
   const float phaseStep =
     2.0f * PI * frequency / SAMPLE_RATE;
 
-  const float amplitude =
-    32767.0f * settingsVolume() / 100.0f;
+  // writeMonoToSpeaker applies the volume.
+  const float amplitude = 32767.0f;
 
   const int totalFrames =
     SAMPLE_RATE * durationMs / 1000;
@@ -175,16 +178,10 @@ void playTone(
         phase -= 2.0f * PI;
       }
 
-      buffer[i * 2] = sample;
-      buffer[i * 2 + 1] = sample;
+      buffer[i] = sample;
     }
 
-    I2S.write(
-      (uint8_t*)buffer,
-      framesThisTime *
-      2 *
-      sizeof(int16_t)
-    );
+    writeMonoToSpeaker(buffer, framesThisTime);
 
     framesPlayed += framesThisTime;
   }
@@ -193,7 +190,7 @@ void playTone(
 void playSilence(int durationMs) {
   constexpr int FRAMES = 512;
 
-  int16_t buffer[FRAMES * 2] = {0};
+  int16_t buffer[FRAMES] = {0};
 
   const int totalFrames =
     SAMPLE_RATE * durationMs / 1000;
@@ -207,12 +204,7 @@ void playSilence(int durationMs) {
         totalFrames - framesPlayed
       );
 
-    I2S.write(
-      (uint8_t*)buffer,
-      framesThisTime *
-      2 *
-      sizeof(int16_t)
-    );
+    writeMonoToSpeaker(buffer, framesThisTime);
 
     framesPlayed += framesThisTime;
   }

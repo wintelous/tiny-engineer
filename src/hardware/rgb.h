@@ -10,7 +10,8 @@ constexpr uint8_t RGB_CODE_I2S = 2;
 
 void setRgb(uint8_t r, uint8_t g, uint8_t b);
 
-// Setup AP wizard: light one WS2812 wire byte (order-independent) and skip
+// Setup AP wizard: light one WS2812 wire byte (SuperMini build: one of GP6, GP7,
+// GP10) order-independent and skip
 // provisioning dim-blue until released.
 void rgbSetupHoldWireByte(uint8_t byteIndex);
 void rgbSetupHoldLogical(uint8_t r, uint8_t g, uint8_t b, const char* order);

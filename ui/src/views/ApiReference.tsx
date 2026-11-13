@@ -136,7 +136,7 @@ export function ApiReference() {
             <td>integer</td>
             <td>
               Extension-port GPIO 6, 7, 20, or 21, or 9 (BOOT button) (default 20; persists when
-              off; immediate)
+              off; immediate); SuperMini build: 9, 20, or 21
             </td>
           </tr>
           <tr>
@@ -207,7 +207,8 @@ export function ApiReference() {
             <td>string</td>
             <td>
               <code>RGB</code>, <code>RBG</code>, <code>GRB</code>, <code>GBR</code>,{" "}
-              <code>BRG</code>, or <code>BGR</code>; setup AP only; default <code>GRB</code>
+              <code>BRG</code>, or <code>BGR</code>; setup AP only; default <code>GRB</code>{" "}
+              (SuperMini build: <code>RGB</code>)
             </td>
           </tr>
           <tr>
@@ -216,7 +217,7 @@ export function ApiReference() {
             </td>
             <td>boolean</td>
             <td>
-              Setup AP only; default <code>false</code>
+              Setup AP only; default <code>false</code> (SuperMini build: <code>true</code>)
             </td>
           </tr>
         </tbody>

@@ -38,6 +38,18 @@ Logic level: **3.3 V**.
 
 Power pads (not GPIO): **5V**, **GND**, **3V3**.
 
+## ESP32-C3 SuperMini build
+
+`pio run -e supermini` builds for an ESP32-C3 SuperMini on discrete breakouts (`TE_BOARD_SUPERMINI`). Every pin above stays the same except the status LED: the SuperMini has no WS2812, so a common-cathode RGB LED takes three pins. Wiring and the other differences: [supermini.md](supermini.md).
+
+| Function | GPIO | Constant | Goes to |
+| --- | --- | --- | --- |
+| RGB red | **GPIO6** | `RGB_RED_PIN` | 330 Ω → red anode |
+| RGB green | **GPIO7** | `RGB_GREEN_PIN` | 330 Ω → green anode |
+| RGB blue | **GPIO10** | `RGB_BLUE_PIN` | 330 Ω → blue anode |
+
+GPIO6 and GPIO7 are then not available as `push_button_pin`. GPIO8 drives the SuperMini's own blue LED and stays unused.
+
 ## Main control board headers
 
 Pin order matches the KiCad board and [`expected-nets.yml`](../../hardware/boards/main-control-board/expected-nets.yml). Board overview: [board README](../../hardware/boards/main-control-board/README.md).
@@ -96,7 +108,10 @@ I2S **DIN** is not on J4 (ESP32 → amp only). **SERVO_5V** is the eFuse-protect
 
 | Constant | Value | Meaning |
 | --- | --- | --- |
-| `SAMPLE_RATE` | 22050 | I2S sample rate |
+| `SAMPLE_RATE` | 22050 | PCM / WAV sample rate |
+| `I2S_FRAME_REPEAT` | 1 (SuperMini build: 2) | Times each PCM frame is sent to the amp |
+| `I2S_SAMPLE_RATE` | 22050 (SuperMini build: 44100) | I2S clock, `SAMPLE_RATE × I2S_FRAME_REPEAT` |
+| `OLED_I2C_CLOCK_HZ` | SuperMini build only: 100000 | OLED I2C clock during and after frames |
 | `PCA9685_ADDRESS` | `0x40` | I2C |
 | `OLED_ADDRESS` | `0x3C` | I2C |
 | `OLED_WIDTH` / `OLED_HEIGHT` | 128 / 32 | Display |

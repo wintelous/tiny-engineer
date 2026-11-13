@@ -107,7 +107,7 @@ void setup() {
 
   if (!I2S.begin(
         I2S_MODE_STD,
-        SAMPLE_RATE,
+        I2S_SAMPLE_RATE,
         I2S_DATA_BIT_WIDTH_16BIT,
         I2S_SLOT_MODE_STEREO
       )) {

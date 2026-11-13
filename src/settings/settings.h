@@ -9,7 +9,11 @@ class WifiNetworkList;
 
 constexpr uint32_t SETTINGS_DEFAULT_SLEEP_TIMEOUT_MIN = 10;
 constexpr const char* SETTINGS_DEFAULT_HOSTNAME = "tiny-engineer";
+#if defined(TE_BOARD_SUPERMINI)
+constexpr uint8_t SETTINGS_DEFAULT_VOLUME = 100;
+#else
 constexpr uint8_t SETTINGS_DEFAULT_VOLUME = 70;
+#endif
 constexpr bool SETTINGS_DEFAULT_WELCOME = true;
 constexpr bool SETTINGS_DEFAULT_SERIAL_LOG = false;
 constexpr bool SETTINGS_DEFAULT_PUSH_BUTTON = false;
@@ -39,8 +43,14 @@ constexpr uint32_t SETTINGS_CONTINUOUS_TIMEOUT_MAX_MIN = 1440;
 constexpr size_t SETTINGS_SERVO_COUNT = 5;
 constexpr uint8_t SETTINGS_SERVO_ANGLE_MAX = 180;
 constexpr size_t SETTINGS_RGB_ORDER_MAX_LEN = 3;
+#if defined(TE_BOARD_SUPERMINI)
+// SuperMini build: discrete RGB LED wired R/G/B on GP6/7/10, OLED mounted upside down.
+constexpr const char* SETTINGS_DEFAULT_RGB_ORDER = "RGB";
+constexpr bool SETTINGS_DEFAULT_OLED_ROTATE_180 = true;
+#else
 constexpr const char* SETTINGS_DEFAULT_RGB_ORDER = "GRB";
 constexpr bool SETTINGS_DEFAULT_OLED_ROTATE_180 = false;
+#endif
 
 struct ServoRanges {
   uint8_t mins[SETTINGS_SERVO_COUNT];
