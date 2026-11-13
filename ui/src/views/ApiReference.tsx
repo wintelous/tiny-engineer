@@ -220,6 +220,16 @@ export function ApiReference() {
               Setup AP only; default <code>false</code> (SuperMini build: <code>true</code>)
             </td>
           </tr>
+          <tr>
+            <td>
+              <code>wifi_tx_power</code>
+            </td>
+            <td>number</td>
+            <td>
+              2&ndash;20 dBm in 0.5 dBm steps; applies immediately; default <code>20</code>{" "}
+              (SuperMini build: <code>8.5</code>)
+            </td>
+          </tr>
         </tbody>
       </table>
       <p>

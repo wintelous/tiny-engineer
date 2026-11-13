@@ -41,7 +41,7 @@ The RGB LED is common-cathode: cathode to GND, each anode through its own resist
 | Push button pins | 6, 7, 9, 20, 21 | 9, 20, 21 | GPIO6/7 drive the LED |
 | I2S clock | 22.05 kHz | 44.1 kHz, each 22.05 kHz frame sent twice (`I2S_FRAME_REPEAT`) | 22.05 kHz is not among the MAX98357A's supported clocks (datasheet). WAVs, streaming and motion timing stay at 22.05 kHz |
 | OLED I2C | 400 kHz during frames | 100 kHz throughout (`OLED_I2C_CLOCK_HZ`); the library does not restart Wire | The OLED stayed blank at 400 kHz over jumper wires |
-| Wi-Fi TX power | Default | 8.5 dBm | The SuperMini's antenna is unreliable at full power |
+| Wi-Fi TX power | 20 dBm | 8.5 dBm default | The SuperMini's antenna is unreliable at full power. Tune it live with `wifi_tx_power` (Config → Wi-Fi radio): raise it if pages stall on a weak link, lower it if the robot drops off Wi-Fi |
 | Flash | QIO 80 MHz | DIO 40 MHz | Conservative timing for the SuperMini's flash chip |
 | Defaults | volume 70, `rgb_order` GRB, OLED not rotated | volume 100, `rgb_order` RGB, OLED rotated 180° | This build's amp, LED wiring and OLED mounting. Saved settings still win |
 

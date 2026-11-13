@@ -24,6 +24,7 @@ const DEFAULT_SETTINGS: Settings = {
   servo_maxs: [100, 100, 100, 100, 100],
   rgb_order: "GRB",
   oled_rotate_180: false,
+  wifi_tx_power: 20,
 };
 
 export interface RecordedRequest {

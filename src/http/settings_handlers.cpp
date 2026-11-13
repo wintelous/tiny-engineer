@@ -55,7 +55,7 @@ bool readField(JsonVariantConst list, uint8_t (&out)[SETTINGS_SERVO_COUNT]) {
 // Fills the patch from the body. Returns the 400 message, or an empty string
 // when every field is known and has the right JSON type.
 String readPatch(JsonObjectConst body, SettingsPatch& patch) {
-  const char* known[19] = {};
+  const char* known[20] = {};
   size_t knownCount = 0;
   const char* wrong = nullptr;
 
@@ -86,6 +86,7 @@ String readPatch(JsonObjectConst body, SettingsPatch& patch) {
   read("link_mode", patch.linkMode);
   read("rgb_order", patch.rgbOrder);
   read("oled_rotate_180", patch.oledRotate180);
+  read("wifi_tx_power", patch.wifiTxPowerDbm);
 
   ServoRanges ranges{};
   read("servo_mins", ranges.mins);
@@ -144,6 +145,7 @@ JsonDocument settingsJson() {
 
   doc["rgb_order"] = settingsRgbOrder();
   doc["oled_rotate_180"] = settingsOledRotate180();
+  doc["wifi_tx_power"] = settingsWifiTxPowerQdbm() / 4.0f;
 
   const WifiNetworkList& networks = settingsWifiNetworks();
   JsonArray ssids = doc["wifi_networks"].to<JsonArray>();
@@ -231,6 +233,10 @@ void handleSettingsPost(WebServer& server) {
   if (patch.oledRotate180) {
     applyOledRotation();
     restoreProvisioningOled();
+  }
+
+  if (patch.wifiTxPowerDbm) {
+    wifiApplyTxPower();
   }
 
   const bool leaveUsbOnly =

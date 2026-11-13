@@ -102,3 +102,7 @@ const char* settingsRgbOrder() {
 bool settingsOledRotate180() {
   return g_settings.oledRotate180;
 }
+
+uint8_t settingsWifiTxPowerQdbm() {
+  return g_settings.wifiTxPowerQdbm;
+}

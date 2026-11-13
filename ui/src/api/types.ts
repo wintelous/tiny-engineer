@@ -48,6 +48,8 @@ export interface Settings {
   servo_maxs: number[];
   rgb_order: string;
   oled_rotate_180: boolean;
+  // dBm, 2–20 in 0.5 steps.
+  wifi_tx_power: number;
   wifi_networks: string[];
   reboot_required?: boolean;
   wifi_connect_success?: boolean;

@@ -1,3 +1,4 @@
+#include <cmath>
 #include <cstring>
 #include <unity.h>
 
@@ -180,6 +181,32 @@ void test_patch_names_its_setup_only_step() {
   TEST_ASSERT_EQUAL_STRING("servo", patch.setupOnlyStep());
 }
 
+void test_wifi_tx_power() {
+  TEST_ASSERT_TRUE(settingsValidateWifiTxPowerDbm(2.0f));
+  TEST_ASSERT_TRUE(settingsValidateWifiTxPowerDbm(8.5f));
+  TEST_ASSERT_TRUE(settingsValidateWifiTxPowerDbm(20.0f));
+  TEST_ASSERT_FALSE(settingsValidateWifiTxPowerDbm(1.5f));
+  TEST_ASSERT_FALSE(settingsValidateWifiTxPowerDbm(20.5f));
+  TEST_ASSERT_FALSE(settingsValidateWifiTxPowerDbm(8.25f));
+  TEST_ASSERT_FALSE(settingsValidateWifiTxPowerDbm(8.3f));
+  TEST_ASSERT_FALSE(settingsValidateWifiTxPowerDbm(-8.0f));
+  TEST_ASSERT_FALSE(settingsValidateWifiTxPowerDbm(NAN));
+  TEST_ASSERT_EQUAL(34, settingsWifiTxPowerDbmToQdbm(8.5f));
+  TEST_ASSERT_EQUAL(80, settingsWifiTxPowerDbmToQdbm(20.0f));
+
+  TEST_ASSERT_TRUE(settingsValidateWifiTxPowerQdbm(34));
+  TEST_ASSERT_FALSE(settingsValidateWifiTxPowerQdbm(35));
+  TEST_ASSERT_FALSE(settingsValidateWifiTxPowerQdbm(6));
+  TEST_ASSERT_FALSE(settingsValidateWifiTxPowerQdbm(84));
+
+  SettingsPatch patch;
+  patch.wifiTxPowerDbm = 30.0f;
+  TEST_ASSERT_EQUAL_STRING("wifi_tx_power", patch.invalidField());
+  patch.wifiTxPowerDbm = 13.0f;
+  TEST_ASSERT_NULL(patch.invalidField());
+  TEST_ASSERT_NULL(patch.setupOnlyStep());
+}
+
 void test_rgb_order() {
   TEST_ASSERT_TRUE(settingsValidateRgbOrder("RGB"));
   TEST_ASSERT_TRUE(settingsValidateRgbOrder("RBG"));
@@ -243,6 +270,7 @@ int main() {
   RUN_TEST(test_servo_ranges);
   RUN_TEST(test_patch_names_the_first_invalid_field);
   RUN_TEST(test_patch_names_its_setup_only_step);
+  RUN_TEST(test_wifi_tx_power);
   RUN_TEST(test_rgb_order);
   RUN_TEST(test_link_mode);
   RUN_TEST(test_link_mode_patch_rejects_empty);
